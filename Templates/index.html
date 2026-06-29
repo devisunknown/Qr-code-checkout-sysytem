@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+{% load static %}
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Akwaba Modern Kitchen - Table {{ table.number }}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Montserrat:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#ffe9e3",
+                    "outline-variant": "#e1bfb4",
+                    "surface-variant": "#e4e2e2",
+                    "secondary-fixed": "#e5e2dc",
+                    "surface-container-high": "#e9e8e7",
+                    "on-secondary-fixed-variant": "#474743",
+                    "tertiary-container": "#6c6b6b",
+                    "on-secondary-container": "#656460",
+                    "surface-tint": "#a93700",
+                    "outline": "#8d7167",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-fixed": "#1b1c1c",
+                    "surface-container-low": "#f5f3f3",
+                    "secondary": "#5f5e5a",
+                    "on-secondary-fixed": "#1c1c18",
+                    "inverse-surface": "#303031",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed": "#e4e2e1",
+                    "surface-container": "#efeded",
+                    "secondary-container": "#e5e2dc",
+                    "on-surface-variant": "#594139",
+                    "surface-container-lowest": "#ffffff",
+                    "on-background": "#1b1c1c",
+                    "primary-fixed-dim": "#ffb59b",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#fbf9f8",
+                    "inverse-primary": "#ffb59b",
+                    "inverse-on-surface": "#f2f0f0",
+                    "on-tertiary-container": "#efedec",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#ffdbcf",
+                    "on-primary-fixed": "#380d00",
+                    "secondary-fixed-dim": "#c9c6c1",
+                    "on-surface": "#1b1c1c",
+                    "background": "#fbf9f8",
+                    "tertiary": "#535353",
+                    "on-primary-fixed-variant": "#812800",
+                    "surface-container-highest": "#e4e2e2",
+                    "surface": "#fbf9f8",
+                    "primary-container": "#c04000",
+                    "on-primary": "#ffffff",
+                    "primary": "#973100",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#c8c6c6",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#dbdad9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "3xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "touch-target-min": "48px",
+                    "base": "8px",
+                    "margin-desktop": "40px",
+                    "margin-mobile": "20px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Montserrat"],
+                    "headline-md": ["Montserrat"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "price-display": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "34px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+
+      .parallax-img {
+        transition: transform 0.3s cubic-bezier(0.33, 1, 0.68, 1);
+      }
+      .menu-card:hover .parallax-img {
+        transform: scale(1.05);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md selection:bg-primary-fixed-dim">
+
+<!-- TopAppBar -->
+<header class="docked full-width top-0 sticky z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-margin-mobile h-touch-target-min">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="restaurant">restaurant</span>
+<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">Table {{ table.number }}</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant dark:hover:bg-on-secondary-fixed-variant transition-colors active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim" data-icon="account_circle">account_circle</span>
+</button>
+</header>
+
+<main class="pb-32">
+
+<!-- Hero Section -->
+<section class="px-margin-mobile pt-6 pb-2">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-1">Welcome to</p>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface leading-tight">Akwaba Modern Kitchen</h2>
+</section>
+
+<!-- Category Tabs -->
+<nav class="sticky top-[48px] z-40 bg-background/95 backdrop-blur-md pt-4 pb-2 border-b border-outline-variant/20">
+<div class="flex overflow-x-auto hide-scrollbar px-margin-mobile gap-4" id="category-tabs">
+<button class="category-tab whitespace-nowrap px-6 py-2.5 rounded-full font-label-sm text-label-sm bg-primary-container text-on-primary-container shadow-md transition-all active:scale-95" data-category="all">All</button>
+{% for category in categories %}
+<button class="category-tab whitespace-nowrap px-6 py-2.5 rounded-full font-label-sm text-label-sm text-secondary hover:bg-surface-container transition-all active:scale-95" data-category="{{ category.id }}">{{ category.name }}</button>
+{% endfor %}
+</div>
+</nav>
+
+<!-- Menu Grid -->
+<div class="px-margin-mobile grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8" id="menu-grid">
+{% for item in menu_items %}
+<article class="menu-card group bg-surface-container-lowest rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-lg transition-all duration-300" data-category="{{ item.category_id }}">
+<div class="relative h-56 overflow-hidden">
+{% if item.image %}
+<img class="parallax-img w-full h-full object-cover" src="{{ item.image.url }}" alt="{{ item.name }}"/>
+{% else %}
+<div class="w-full h-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-4xl">restaurant_menu</span>
+</div>
+{% endif %}
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full font-price-display text-primary shadow-sm">GH₵ {{ item.price }}</div>
+</div>
+<div class="p-5 flex flex-col h-full">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">{{ item.name }}</h3>
+<form action="{% url 'cart_add' qr_token=table.qr_token %}" method="post">
+{% csrf_token %}
+<input type="hidden" name="menu_item_id" value="{{ item.id }}">
+<input type="hidden" name="quantity" value="1">
+<button type="submit" class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary-container transition-colors active:scale-90 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'wght' 600;">add</span>
+</button>
+</form>
+</div>
+<p class="font-body-md text-body-md text-secondary leading-relaxed flex-grow">{{ item.description }}</p>
+</div>
+</article>
+{% empty %}
+<p class="col-span-full text-center text-secondary py-12">No menu items available right now.</p>
+{% endfor %}
+</div>
+
+</main>
+
+<!-- Floating Cart Button -->
+{% if cart_count > 0 %}
+<div class="fixed bottom-24 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-50">
+<a href="{% url 'table_cart' qr_token=table.qr_token %}" class="w-full bg-primary-container text-on-primary-container h-16 rounded-2xl shadow-2xl flex items-center justify-between px-6 hover:scale-[1.02] active:scale-95 transition-all duration-200">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-label-sm text-label-sm">{{ cart_count }} items</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-headline-md">GH₵ {{ cart_total }}</span>
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</div>
+</a>
+</div>
+{% endif %}
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-surface dark:bg-inverse-surface rounded-t-xl shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1.5 transition-all active:scale-90" href="{% url 'table_menu' qr_token=table.qr_token %}">
+<span class="material-symbols-outlined" data-icon="menu_book" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-sm text-label-sm">Menu</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1.5 hover:bg-surface-container-high dark:hover:bg-tertiary-container transition-all active:scale-90" href="{% url 'orderstatus' qr_token=table.qr_token %}">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-sm text-label-sm">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1.5 hover:bg-surface-container-high dark:hover:bg-tertiary-container transition-all active:scale-90" href="{% url 'table_cart' qr_token=table.qr_token %}">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+<span class="font-label-sm text-label-sm">Cart</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1.5 hover:bg-surface-container-high dark:hover:bg-tertiary-container transition-all active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-label-sm text-label-sm">Help</span>
+</a>
+</nav>
+
+<script>
+        // Category tab filtering (client-side, no page reload)
+        const tabs = document.querySelectorAll('.category-tab');
+        const cards = document.querySelectorAll('#menu-grid .menu-card');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-md');
+                    t.classList.add('text-secondary', 'hover:bg-surface-container');
+                });
+                tab.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-md');
+                tab.classList.remove('text-secondary', 'hover:bg-surface-container');
+
+                const selected = tab.dataset.category;
+                cards.forEach(card => {
+                    card.style.display = (selected === 'all' || card.dataset.category === selected) ? '' : 'none';
+                });
+            });
+        });
+
+        // Simple parallax on scroll for menu images
+        window.addEventListener('scroll', () => {
+            const scroll = window.pageYOffset;
+            document.querySelectorAll('.parallax-img').forEach(img => {
+                const speed = 0.05;
+                const rect = img.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    img.style.transform = `translateY(${(rect.top - window.innerHeight / 2) * speed}px)`;
+                }
+            });
+        });
+    </script>
+</body></html>
