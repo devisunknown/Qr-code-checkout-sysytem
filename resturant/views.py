@@ -10,11 +10,42 @@ from django.views.decorators.http import require_POST
 def index(request, qr_token):
     table, session = get_active_session(qr_token)
     menu_items = MenuItem.objects.filter(is_available=True).select_related("category")
-    return render(request, 'index.html', {"table": table, "session": session, "menu_items": menu_items})
+    categories = Category.objects.all()
+    cart_items = session.cart_items.select_related("menu_item")
+    cart_count = sum(item.quantity for item in cart_items)
+    cart_total = sum(item.menu_item.price * item.quantity for item in cart_items)
+    return render(request, 'index.html', {
+        "table": table,
+        "session": session,
+        "menu_items": menu_items,
+        "categories": categories,
+        "cart_count": cart_count,
+        "cart_total": cart_total,
+    })
 
 
 def cart(request, qr_token):
     table, session = get_active_session(qr_token)
+
+    if request.method == "POST":
+        menu_item_id = request.POST.get("menu_item_id")
+        if menu_item_id:
+            menu_item = get_object_or_404(MenuItem, id=menu_item_id)
+            quantity = int(request.POST.get("quantity", 1) or 1)
+            if quantity > 0:
+                cart_item, created = CartItem.objects.get_or_create(
+                    table_session=session,
+                    menu_item=menu_item,
+                    defaults={"quantity": quantity},
+                )
+                if not created:
+                    cart_item.quantity += quantity
+                    cart_item.save()
+                messages.success(request, f"{menu_item.name} added to your cart")
+            else:
+                messages.error(request, "Please choose a valid quantity")
+        return redirect("table_cart", qr_token=qr_token)
+
     items = session.cart_items.select_related("menu_item")
     total = sum(item.menu_item.price * item.quantity for item in items)
     return render(request, 'cart.html', {"table": table, "session": session, "items": items, "total": total})
@@ -44,6 +75,54 @@ def orderstatus(request, qr_token):
 def successful_order(request, qr_token):
     table, session = get_active_session(qr_token)
     return render(request, 'successful_order.html', {"table": table, "session": session})
+
+
+def cart_update(request, qr_token, item_id):
+    table, session = get_active_session(qr_token)
+    cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
+
+    if request.method == "POST":
+        quantity = request.POST.get("quantity")
+        try:
+            new_quantity = int(quantity)
+        except (TypeError, ValueError):
+            new_quantity = cart_item.quantity
+
+        if new_quantity <= 0:
+            cart_item.delete()
+        else:
+            cart_item.quantity = new_quantity
+            cart_item.save()
+
+    return redirect("table_cart", qr_token=qr_token)
+
+
+def cart_remove(request, qr_token, item_id):
+    table, session = get_active_session(qr_token)
+    cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
+    cart_item.delete()
+    return redirect("table_cart", qr_token=qr_token)
+
+
+def cart_send(request, qr_token):
+    table, session = get_active_session(qr_token)
+    items = session.cart_items.select_related("menu_item")
+
+    if request.method == "POST" and items.exists():
+        order = Order.objects.create(table_session=session, status="pending")
+        for item in items:
+            OrderItem.objects.create(
+                order=order,
+                menu_item=item.menu_item,
+                quantity=item.quantity,
+                price_at_order=item.menu_item.price,
+            )
+        items.delete()
+        session.status = "awaiting_payment"
+        session.save(update_fields=["status"])
+        return redirect("orderstatus", qr_token=qr_token)
+
+    return redirect("table_cart", qr_token=qr_token)
 
 
 def kitchenlogin(request):
@@ -83,3 +162,15 @@ def advance_order_status(request, order_id):
         order.status = new_status
         order.save()
     return redirect('kitchendashboard')
+
+@login_required
+def kitchendisplay(request):
+    orders = (Order.objects.exclude(status="served")
+              .select_related("table_session__table")
+              .prefetch_related("items__menu_item")
+              .order_by("placed_at"))
+    return render(request, 'kitchendisplay.html', {
+        "orders": orders,
+        "live_ticket_count": orders.count(),
+        "tables_active": TableSession.objects.filter(status__in=["ordering", "awaiting_payment"]).count(),
+    })

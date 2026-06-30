@@ -170,7 +170,7 @@
 <div class="p-5 flex flex-col h-full">
 <div class="flex justify-between items-start mb-2">
 <h3 class="font-headline-md text-headline-md text-on-surface">{{ item.name }}</h3>
-<form action="{% url 'cart_add' qr_token=table.qr_token %}" method="post">
+<form action="{% url 'table_cart' qr_token=table.qr_token %}" method="post">
 {% csrf_token %}
 <input type="hidden" name="menu_item_id" value="{{ item.id }}">
 <input type="hidden" name="quantity" value="1">
