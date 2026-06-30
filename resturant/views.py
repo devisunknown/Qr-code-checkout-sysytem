@@ -140,9 +140,8 @@ def kitchenlogin(request):
         
     return render(request,'kitchenlogin.html')
 
-
 @login_required
-def kitchendashboard(request):
+def dashboard(request):
     orders = (Order.objects.exclude(status="served")
               .select_related("table_session__table")
               .prefetch_related("items__menu_item")

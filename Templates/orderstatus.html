@@ -130,8 +130,8 @@
 <span class="material-symbols-outlined text-primary" data-icon="restaurant">restaurant</span>
 <h1 class="text-headline-md font-headline-md text-primary">Table {{ table.number }}</h1>
 </div>
-<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors active:scale-95">
-<span class="material-symbols-outlined text-primary" data-icon="account_circle">account_circle</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors active:scale-95" id="theme-toggle">
+<span class="material-symbols-outlined text-primary" data-icon="brightness_6" id="theme-icon">brightness_6</span>
 </button>
 </header>
 <main class="flex-grow px-margin-mobile pt-8 pb-32 max-w-2xl mx-auto w-full">
@@ -234,7 +234,45 @@
 <span class="font-label-sm text-label-sm">Help</span>
 </a>
 </nav>
+</body></html>
 <script>
+        // Theme handling
+        const themeToggle = document.getElementById("theme-toggle");
+        const themeIcon = document.getElementById("theme-icon");
+        const htmlElement = document.documentElement;
+        
+        // Check for saved user preference or use system preference
+        const getCurrentTheme = () => {
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) {
+                return savedTheme;
+            }
+            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        };
+        
+        // Set theme on page load
+        const setTheme = (theme) => {
+            if (theme === "dark") {
+                htmlElement.classList.add("dark");
+                htmlElement.classList.remove("light");
+                themeIcon.textContent = "brightness_2"; // sunny icon when in dark mode
+            } else {
+                htmlElement.classList.add("light");
+                htmlElement.classList.remove("dark");
+                themeIcon.textContent = "brightness_4"; // moon icon when in light mode
+            }
+            localStorage.setItem("theme", theme);
+        };
+        
+        // Initialize theme
+        setTheme(getCurrentTheme());
+        
+        // Toggle theme when button is clicked
+        themeToggle.addEventListener("click", () => {
+            const newTheme = htmlElement.classList.contains("dark") ? "light" : "dark";
+            setTheme(newTheme);
+        });
+        
         // Simple micro-interaction for the bill button
         const billBtn = document.querySelector('button.bg-primary');
         billBtn.addEventListener('click', () => {

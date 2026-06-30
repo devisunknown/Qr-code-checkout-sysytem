@@ -11,6 +11,6 @@ urlpatterns = [
     path("t/<uuid:qr_token>/checkout/", views.checkout, name="checkout"),
     path("t/<uuid:qr_token>/success/", views.successful_order, name="successful_order"),
     path("kitchen/login/", views.kitchenlogin, name="kitchenlogin"),
-    path("kitchen/dashboard/", views.kitchendashboard, name="kitchendashboard"),
+    path("kitchen/dashboard/", views.dashboard, name="kitchendashboard"),
     path("kitchen/display/", views.kitchendisplay, name="kitchendisplay"),
 ]
