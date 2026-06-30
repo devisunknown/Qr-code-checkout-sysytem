@@ -69,6 +69,7 @@ class Order(models.Model):
     table_session = models.ForeignKey(TableSession, on_delete=models.CASCADE, related_name="orders")
     status = models.CharField(max_length=10, choices=[("pending","Pending"),("preparing","Preparing"),("ready","Ready"),("served","Served")], default="pending")
     paid = models.BooleanField(default=False)
+    started_preparing_at = models.DateTimeField(null=True, blank=True)
     placed_at = models.DateTimeField(auto_now_add=True)
 
 class OrderItem(models.Model):

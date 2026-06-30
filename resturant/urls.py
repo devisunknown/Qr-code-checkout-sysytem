@@ -14,4 +14,5 @@ urlpatterns = [
     path("kitchen/dashboard/", views.dashboard, name="kitchendashboard"),
     path("kitchen/display/", views.kitchendisplay, name="kitchendisplay"),
     path("kitchen/order/<int:order_id>/status/", views.advance_order_status, name="advance_order_status"),
+    path("kitchen/table/<int:table_id>/mark-ready/", views.mark_table_orders_ready, name="mark_table_orders_ready"),
 ]

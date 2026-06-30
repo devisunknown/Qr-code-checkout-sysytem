@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate,login
 from django.contrib.auth.models import User 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 def index(request, qr_token):
@@ -157,16 +156,15 @@ def dashboard(request):
         "tables_active": tables_active,
     })
 @login_required
+@require_POST
 def advance_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     new_status = request.POST.get("status")
     if new_status in dict(Order.Status.choices if hasattr(Order, "Status") else []):
         order.status = new_status
-        # Set the timestamp when order starts preparing
-        if new_status == "preparing":
-            order.started_preparing_at = timezone.now()
         order.save()
-    return redirect("kitchendashboard")
+    return redirect('kitchendashboard')
+
 @login_required
 def kitchendisplay(request):
     orders = (Order.objects.exclude(status__in=["served","ready"])

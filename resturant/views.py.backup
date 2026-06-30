@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate,login
 from django.contrib.auth.models import User 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 def index(request, qr_token):
@@ -157,16 +156,15 @@ def dashboard(request):
         "tables_active": tables_active,
     })
 @login_required
+@require_POST
 def advance_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     new_status = request.POST.get("status")
     if new_status in dict(Order.Status.choices if hasattr(Order, "Status") else []):
         order.status = new_status
-        # Set the timestamp when order starts preparing
-        if new_status == "preparing":
-            order.started_preparing_at = timezone.now()
         order.save()
-    return redirect("kitchendashboard")
+    return redirect('kitchendashboard')
+
 @login_required
 def kitchendisplay(request):
     orders = (Order.objects.exclude(status__in=["served","ready"])
@@ -182,13 +180,10 @@ def kitchendisplay(request):
 @login_required
 def mark_table_orders_ready(request, table_id):
     if request.method == 'POST':
-        try:
-            # Update all orders for this table that are currently preparing to ready
-            updated = Order.objects.filter(table_session__table_id=table_id, status='preparing').update(status='ready')
-            if updated:
-                messages.success(request, f'{updated} order(s) for table marked as ready. Customers will be notified.')
-            else:
-                messages.info(request, 'No preparing orders found for this table.')
-        except Exception as e:
-            messages.error(request, f'An error occurred while marking orders as ready: {str(e)}')
+        # Update all orders for this table that are currently preparing to ready
+        updated = Order.objects.filter(table_session__table_id=table_id, status='preparing').update(status='ready')
+        if updated:
+            messages.success(request, f'{updated} order(s) for table marked as ready. Customers will be notified.')
+        else:
+            messages.info(request, 'No preparing orders found for this table.')
     return redirect('kitchendashboard')
