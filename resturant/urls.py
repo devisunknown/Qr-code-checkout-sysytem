@@ -13,4 +13,5 @@ urlpatterns = [
     path("kitchen/login/", views.kitchenlogin, name="kitchenlogin"),
     path("kitchen/dashboard/", views.dashboard, name="kitchendashboard"),
     path("kitchen/display/", views.kitchendisplay, name="kitchendisplay"),
+    path("kitchen/order/<int:order_id>/status/", views.advance_order_status, name="advance_order_status"),
 ]
