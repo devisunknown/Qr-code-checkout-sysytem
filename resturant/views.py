@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect,get_object_or_404
 from .utils import get_active_session,TableSession,Table
 from .models import MenuItem, Table, TableSession, CartItem, Category, Order, OrderItem
 from django.contrib.auth import authenticate,login
-from django.contrib.auth.models import User 
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -128,20 +128,20 @@ def cart_send(request, qr_token):
 
 
 def kitchenlogin(request):
-    if request.method =='POST':
-        username=request.POST.get('username')
-        password=request.POST.get('password')
-        User=authenticate(username=username,password=password)
-        if User is not None:
-            login(request, User)
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
             request.session.set_expiry(12390)
-            messages.success(request,'user is authenticated')
+            messages.success(request, 'user is authenticated')
             return redirect('kitchendashboard')
         else:
-            messages.error(request,'user not authenticated')
+            messages.error(request, 'user not authenticated')
             return redirect('kitchenlogin')
 
-    return render(request,'kitchenlogin.html')
+    return render(request, 'kitchenlogin.html')
 
 @login_required
 def dashboard(request):
@@ -156,17 +156,31 @@ def dashboard(request):
         "live_ticket_count": live_ticket_count,
         "tables_active": tables_active,
     })
+
+
+# Valid Order status values. Order.status uses inline choices=[...] rather
+# than a TextChoices class, so there is no Order.Status attribute to check
+# against — that's why the old hasattr(Order, "Status") check always
+# evaluated to False and silently blocked every status update.
+VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
+
 @login_required
+@require_POST
 def advance_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     new_status = request.POST.get("status")
-    if new_status in dict(Order.Status.choices if hasattr(Order, "Status") else []):
-        order.status = new_status
-        # Set the timestamp when order starts preparing
-        if new_status == "preparing":
-            order.started_preparing_at = timezone.now()
-        order.save()
+
+    if new_status not in VALID_ORDER_STATUSES:
+        messages.error(request, "Invalid status update.")
+        return redirect("kitchendashboard")
+
+    order.status = new_status
+    if new_status == "preparing":
+        order.started_preparing_at = timezone.now()
+    order.save()
+
     return redirect("kitchendashboard")
+
 @login_required
 def kitchendisplay(request):
     orders = (Order.objects.exclude(status__in=["served","ready"])
@@ -183,12 +197,19 @@ def kitchendisplay(request):
 def mark_table_orders_ready(request, table_id):
     if request.method == 'POST':
         try:
-            # Update all orders for this table that are currently preparing to ready
-            updated = Order.objects.filter(table_session__table_id=table_id, status='preparing').update(status='ready')
-            if updated:
-                messages.success(request, f'{updated} order(s) for table marked as ready. Customers will be notified.')
+            updated = Order.objects.filter(
+                table_session__table_id=table_id, status='preparing'
+            ).update(status='ready')
+
+            ready_orders = Order.objects.filter(table_session__table_id=table_id, status='ready')
+            if ready_orders.exists():
+                messages.success(
+                    request,
+                    f'{ready_orders.count()} order(s) for table marked as ready. Customers will be notified.'
+                )
+                ready_orders.delete()
             else:
                 messages.info(request, 'No preparing orders found for this table.')
-        except Exception as e:
+        except Exception as e:  
             messages.error(request, f'An error occurred while marking orders as ready: {str(e)}')
     return redirect('kitchendashboard')

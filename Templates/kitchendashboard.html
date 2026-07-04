@@ -228,6 +228,10 @@
 {% endfor %}
 </ul>
 <p class="text-on-surface-variant text-label-sm mb-2">Placed {{ order.placed_at|timesince }} ago</p>
+
+<!-- Single form per order, routed through advance_order_status.
+     No nested <form> here — the "Start preparing" button now lives
+     inside this same outer form instead of a broken inner <form>. -->
 <form action="{% url 'advance_order_status' order_id=order.id %}" method="post" class="pt-2 border-t border-outline-variant">
 {% csrf_token %}
 {% if order.status == 'pending' %}
