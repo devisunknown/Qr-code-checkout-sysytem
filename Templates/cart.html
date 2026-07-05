@@ -175,7 +175,7 @@
 <div class="flex justify-between items-center mt-4">
 <div>
 <span class="text-price-display font-price-display text-primary">GH₵ {{ item.menu_item.price }}</span>
-<p class="text-label-sm font-label-sm text-secondary">Subtotal: GH₵ {{ item.menu_item.price|mul:item.quantity }}</p>
+<p class="text-label-sm font-label-sm text-secondary">Subtotal: GH₵ {{ item.line_total }}</p>
 </div>
 <form action="{% url 'cart_update' qr_token=table.qr_token item_id=item.id %}" method="post" class="flex items-center bg-surface-container-high rounded-full p-1">
 {% csrf_token %}
