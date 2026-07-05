@@ -206,7 +206,7 @@
 <!-- Bottom Action Bar (Persistent Request Bill) -->
 <div class="fixed bottom-24 left-0 right-0 px-margin-mobile pointer-events-none z-40">
 <div class="max-w-2xl mx-auto pointer-events-auto">
-<button type="button" onclick="window.location.href='{% url 'checkout' qr_token=table.qr_token %}'" class="w-full h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform font-headline-md text-headline-md">
+<button type="button" onclick="window.location.href='{% url 'request_bill' qr_token=table.qr_token %}'" class="w-full h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform font-headline-md text-headline-md">
 <span class="material-symbols-outlined" data-icon="payments">payments</span>
                 Request bill
             </button>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bill Requested - Akwaaba Feast</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Montserrat:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        
+        @keyframes subtle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: subtle-float 4s ease-in-out infinite;
+        }
+
+        @keyframes check-draw {
+            0% { stroke-dashoffset: 100; opacity: 0; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        .check-path {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: check-draw 0.8s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.5s;
+        }
+
+        .success-glow {
+            box-shadow: 0 0 40px 10px rgba(151, 49, 0, 0.1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container": "#efeded",
+                      "primary-fixed": "#ffdbcf",
+                      "surface-container-highest": "#e4e2e2",
+                      "on-background": "#1b1c1c",
+                      "surface-variant": "#e4e2e2",
+                      "on-primary-fixed": "#380d00",
+                      "inverse-on-surface": "#f2f0f0",
+                      "error-container": "#ffdad6",
+                      "surface-tint": "#a93700",
+                      "tertiary-fixed-dim": "#c8c6c6",
+                      "surface-container-high": "#e9e8e7",
+                      "on-tertiary": "#ffffff",
+                      "on-surface": "#1b1c1c",
+                      "tertiary": "#535353",
+                      "surface-container-low": "#f5f3f3",
+                      "inverse-primary": "#ffb59b",
+                      "primary": "#973100",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed": "#1c1c18",
+                      "surface-bright": "#fbf9f8",
+                      "on-secondary-fixed-variant": "#474743",
+                      "secondary-fixed-dim": "#c9c6c1",
+                      "background": "#fbf9f8",
+                      "secondary-fixed": "#e5e2dc",
+                      "on-tertiary-container": "#efedec",
+                      "error": "#ba1a1a",
+                      "surface": "#fbf9f8",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-container": "#ffe9e3",
+                      "primary-fixed-dim": "#ffb59b",
+                      "outline-variant": "#e1bfb4",
+                      "outline": "#8d7167",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#6c6b6b",
+                      "secondary": "#5f5e5a",
+                      "primary-container": "#c04000",
+                      "on-secondary-container": "#656460",
+                      "on-primary-fixed-variant": "#812800",
+                      "on-error-container": "#93000a",
+                      "surface-dim": "#dbdad9",
+                      "inverse-surface": "#303031",
+                      "on-surface-variant": "#594139",
+                      "on-tertiary-fixed": "#1b1c1c",
+                      "on-tertiary-fixed-variant": "#474747",
+                      "tertiary-fixed": "#e4e2e1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "2xl": "1rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "40px",
+                      "gutter": "16px",
+                      "base": "8px",
+                      "touch-target-min": "48px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "label-sm": ["Inter"],
+                      "headline-lg-mobile": ["Montserrat"],
+                      "display-lg": ["Montserrat"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Montserrat"],
+                      "headline-lg": ["Montserrat"],
+                      "price-display": ["Inter"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "34px", "fontWeight": "700"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-md overflow-x-hidden">
+<!-- Header Section (Static as per transactional rules - Navigation Suppressed) -->
+<header class="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-margin-mobile h-touch-target-min">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary font-headline-md">restaurant</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">Akwaaba Feast</span>
+</div>
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant active:scale-90 transition-transform">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile pt-24 pb-12 relative">
+<!-- Background Atmospheric Element -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="absolute -top-20 -right-20 w-80 h-80 bg-primary-fixed opacity-20 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-40 -left-20 w-96 h-96 bg-secondary-fixed opacity-30 rounded-full blur-3xl"></div>
+</div>
+<!-- Requested Bill Card -->
+<div class="w-full max-w-md bg-surface-container-lowest rounded-2xl p-base p-8 shadow-lg text-center relative z-10 border border-surface-container">
+<!-- Icon State -->
+<div class="relative inline-block mb-8">
+<div class="w-24 h-24 bg-primary text-white rounded-full flex items-center justify-center success-glow animate-float">
+<svg class="w-12 h-12 fill-none stroke-current stroke-2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 7h4m0 0v4m-4-4h14M4 7l2 2M4 11l2-2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- Decorative confetti pieces (we can keep or remove) -->
+<div class="absolute -top-4 -left-2 w-3 h-3 bg-primary-fixed rounded-full"></div>
+<div class="absolute top-0 -right-4 w-4 h-4 bg-secondary-fixed rotate-45"></div>
+<div class="absolute -bottom-2 right-0 w-2 h-2 bg-primary"></div>
+</div>
+<!-- Headlines -->
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-3">
+Bill Requested
+</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8 px-4">
+Your bill has been requested. Our staff will bring the bill to your table shortly.
+</p>
+<!-- Order Details -->
+{% if items %}
+<div class="mt-6 border-t border-slate-200 dark:border-slate-800 pt-5 space-y-3">
+{% for item in items %}
+<div class="flex justify-between gap-3">
+<span>{{ item.quantity }} x {{ item.menu_item.name }}</span>
+<span>GH₵ {{ item.line_total }}</span>
+</div>
+{% endfor %}
+<div class="border-t border-slate-200 dark:border-slate-800 pt-3 flex justify-between font-bold text-lg">
+<span>Total</span>
+<span>GH₵ {{ total }}</span>
+</div>
+</div>
+{% else %}
+<div class="mt-6 text-center">
+<p class="text-slate-600 dark:text-slate-400">No items in your cart.</p>
+</div>
+{% endif %}
+<!-- Primary Action -->
+<div class="mt-6 flex gap-3">
+<a href="{% url 'table_menu' qr_token=table.qr_token %}" class="w-full bg-primary text-on-primary font-body-md font-bold py-4 rounded-xl min-h-[56px] shadow-md hover:bg-primary-container transition-all active:scale-95">
+Continue Browsing
+</a>
+<a href="{% url 'orderstatus' qr_token=table.qr_token %}" class="w-full text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
+View Orders
+</a>
+</div>
+</div>
+<!-- Decorative Menu Preview (Asymmetric Accent) -->
+<div class="mt-12 w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+</div>
+</main>
+<!-- Footer Identity -->
+<footer class="py-8 text-center text-on-surface-variant/40">
+<p class="font-label-sm text-label-sm">Akwaaba Feast • Traditional Hospitality, Digital Ease</p>
+</footer>
+<script>
+        // Micro-interaction: Confetti trigger on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Success screen loaded');
+            // Logic for a small celebratory burst could go here if canvas is available
+        });
+    </script>
+</body></html>

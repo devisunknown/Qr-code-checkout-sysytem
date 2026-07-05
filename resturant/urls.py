@@ -8,6 +8,7 @@ urlpatterns = [
     path("t/<uuid:qr_token>/cart/remove/<int:item_id>/", views.cart_remove, name="cart_remove"),
     path("t/<uuid:qr_token>/cart/send/", views.cart_send, name="cart_send"),
     path("t/<uuid:qr_token>/orderstatus/", views.orderstatus, name="orderstatus"),
+    path("t/<uuid:qr_token>/request-bill/", views.request_bill, name="request_bill"),
     path("t/<uuid:qr_token>/checkout/", views.checkout, name="checkout"),
     path("t/<uuid:qr_token>/success/", views.successful_order, name="successful_order"),
     path("kitchen/login/", views.kitchenlogin, name="kitchenlogin"),

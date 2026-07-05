@@ -7,7 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
 
+
+
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def index(request, qr_token):
     table, session = get_active_session(qr_token)
     menu_items = MenuItem.objects.filter(is_available=True).select_related("category")
@@ -25,6 +29,7 @@ def index(request, qr_token):
     })
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart(request, qr_token):
     table, session = get_active_session(qr_token)
 
@@ -48,10 +53,14 @@ def cart(request, qr_token):
         return redirect("table_cart", qr_token=qr_token)
 
     items = session.cart_items.select_related("menu_item")
+    # Attach line_total to each cart item for template use
+    for item in items:
+        item.line_total = item.menu_item.price * item.quantity
     total = sum(item.menu_item.price * item.quantity for item in items)
     return render(request, 'cart.html', {"table": table, "session": session, "items": items, "total": total})
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def checkout(request, qr_token):
     table, session = get_active_session(qr_token)
     items = session.cart_items.select_related("menu_item")
@@ -67,17 +76,20 @@ def checkout(request, qr_token):
         "total": total,
     })
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
 def orderstatus(request, qr_token):
     table, session = get_active_session(qr_token)
     orders = session.orders.prefetch_related("items__menu_item")
     return render(request, 'orderstatus.html', {"table": table, "session": session, "orders": orders})
 
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
 def successful_order(request, qr_token):
     table, session = get_active_session(qr_token)
     return render(request, 'successful_order.html', {"table": table, "session": session})
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart_update(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
     cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
@@ -98,6 +110,7 @@ def cart_update(request, qr_token, item_id):
     return redirect("table_cart", qr_token=qr_token)
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart_remove(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
     cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
@@ -105,6 +118,7 @@ def cart_remove(request, qr_token, item_id):
     return redirect("table_cart", qr_token=qr_token)
 
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart_send(request, qr_token):
     table, session = get_active_session(qr_token)
     items = session.cart_items.select_related("menu_item")
@@ -126,7 +140,7 @@ def cart_send(request, qr_token):
     return redirect("table_cart", qr_token=qr_token)
 
 
-
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def kitchenlogin(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -143,9 +157,10 @@ def kitchenlogin(request):
 
     return render(request, 'kitchenlogin.html')
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
 @login_required
 def dashboard(request):
-    orders = (Order.objects.exclude(status__in=["served","ready"])
+    orders = (Order.objects.exclude(status="served")
                   .select_related("table_session__table")
                   .prefetch_related("items__menu_item")
                   .order_by("placed_at"))
@@ -158,12 +173,9 @@ def dashboard(request):
     })
 
 
-# Valid Order status values. Order.status uses inline choices=[...] rather
-# than a TextChoices class, so there is no Order.Status attribute to check
-# against — that's why the old hasattr(Order, "Status") check always
-# evaluated to False and silently blocked every status update.
 VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 @login_required
 @require_POST
 def advance_order_status(request, order_id):
@@ -181,9 +193,10 @@ def advance_order_status(request, order_id):
 
     return redirect("kitchendashboard")
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
 @login_required
 def kitchendisplay(request):
-    orders = (Order.objects.exclude(status__in=["served","ready"])
+    orders = (Order.objects.exclude(status="served")
               .select_related("table_session__table")
               .prefetch_related("items__menu_item")
               .order_by("placed_at"))
@@ -193,6 +206,7 @@ def kitchendisplay(request):
         "tables_active": TableSession.objects.filter(status__in=["ordering", "awaiting_payment"]).count(),
     })
 
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 @login_required
 def mark_table_orders_ready(request, table_id):
     if request.method == 'POST':
@@ -213,3 +227,33 @@ def mark_table_orders_ready(request, table_id):
         except Exception as e:  
             messages.error(request, f'An error occurred while marking orders as ready: {str(e)}')
     return redirect('kitchendashboard')
+
+
+
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
+def request_bill(request, qr_token):
+    from .utils import get_active_session
+    table, session = get_active_session(qr_token)
+
+    order = session.orders.exclude(status='served').order_by('-placed_at').first()
+
+    if order:
+        items = list(order.items.all())  # force evaluation before we delete the order
+        total = sum(item.price_at_order * item.quantity for item in items)
+
+        order.bill_requested = True
+        order.save(update_fields=['bill_requested'])
+        order.delete()
+
+        messages.info(request, "Bill requested successfully.")
+    else:
+        items = list(session.cart_items.select_related("menu_item"))
+        total = sum(item.menu_item.price * item.quantity for item in items)
+
+    return render(request, 'request bill.html', {
+        "table": table,
+        "session": session,
+        "order": order,
+        "items": items,
+        "total": total,
+    })

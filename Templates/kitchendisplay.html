@@ -149,6 +149,54 @@
 <!-- Main Content: Masonry KDS Grid -->
 <main class="flex-grow p-gutter overflow-y-auto bg-surface-container-low">
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+{% for order in orders %}
+<div class="bg-surface-container-lowest border-2 rounded-xl flex flex-col shadow-sm h-fit">
+<div class="p-4 border-b-2 border-surface-variant flex justify-between items-start">
+<div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Table</div>
+<div class="font-headline-md text-headline-md text-on-surface">{{ order.table_session.table.number }}</div>
+</div>
+<div class="text-right">
+<div class="font-label-sm text-label-sm text-secondary uppercase">
+  {% if order.bill_requested %}Bill Requested
+  {% elif order.status == 'pending' %}Pending
+  {% elif order.status == 'preparing' %}Preparing
+  {% elif order.status == 'ready' %}Ready
+  {% endif %}
+</div>
+<div class="font-headline-md text-headline-md text-on-surface">{{ order.placed_at|time:"H:i" }}</div>
+</div>
+</div>
+<div class="p-4 flex-grow space-y-4">
+{% for item in order.items.all %}
+<div class="flex justify-between items-start border-b border-surface-variant pb-2">
+<div class="flex gap-3">
+<span class="font-bold text-headline-md text-primary">{{ item.quantity }}</span>
+<div>
+<p class="font-headline-md text-[20px] leading-tight">{{ item.menu_item.name }}</p>
+{% if item.menu_item.description %}<p class="text-label-sm text-secondary">{{ item.menu_item.description }}</p>{% endif %}
+</div>
+</div>
+</div>
+{% endfor %}
+</div>
+<div class="p-2 grid grid-cols-3 gap-2 bg-surface-container">
+<button class="bg-surface-variant text-on-surface-variant py-3 rounded-lg font-label-sm hover:bg-outline-variant transition-colors active:scale-95 duration-150">
+PREPARING
+</button>
+<button class="bg-primary text-on-primary py-3 rounded-lg font-label-sm hover:opacity-90 active:scale-95 duration-150">
+READY
+</button>
+<button class="bg-secondary text-white py-3 rounded-lg font-label-sm hover:opacity-90 active:scale-95 duration-150">
+SERVE
+</button>
+</div>
+</div>
+{% empty %}
+<p class="text-on-surface-variant col-span-full text-center py-12">No active orders.</p>
+{% endfor %}
+</div>
+</main>
 <!-- Ticket 1: Active/Urgent -->
 <div class="bg-surface-container-lowest border-2 border-error rounded-xl flex flex-col shadow-sm h-fit">
 <div class="p-4 border-b-2 border-surface-variant flex justify-between items-start bg-error-container/10">

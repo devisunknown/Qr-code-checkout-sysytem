@@ -211,14 +211,17 @@
     </div>
 </div>
 {% for order in table.list %}
-<div class="bg-surface-container p-4 rounded-xl border-2 mb-4 {% if order.status == 'pending' %}border-error ticket-urgent{% else %}border-outline-variant{% endif %}">
+<div class="bg-surface-container p-4 rounded-xl border-2 mb-4 {% if order.status == 'pending' %}border-error ticket-urgent{% elif order.bill_requested %}border-primary{% else %}border-outline-variant{% endif %}">
 <div class="flex justify-between items-center mb-2">
 <span class="font-body-md text-on-surface">Order #{{ order.id }}</span>
 <span class="px-2 py-0.5 text-label-sm rounded-full
   {% if order.status == 'pending' %}bg-error text-white
   {% elif order.status == 'preparing' %}bg-primary text-on-primary
   {% elif order.status == 'ready' %}bg-primary-container text-on-primary-container
-  {% endif %}">{{ order.get_status_display }}</span>
+  {% elif order.bill_requested %}bg-primary text-on-primary
+  {% endif %}">
+  {% if order.bill_requested %}Bill Requested{% else %}{{ order.get_status_display }}{% endif %}
+</span>
 </div>
 <ul class="space-y-1 mb-2">
 {% for line in order.items.all %}
