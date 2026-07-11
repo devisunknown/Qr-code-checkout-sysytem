@@ -245,7 +245,7 @@ def request_bill(request, qr_token):
         order.save(update_fields=['bill_requested'])
         order.delete()
 
-        messages.info(request, "Bill requested successfully.")
+        messages.info(request, " Bill requested successfully.")
     else:
         items = list(session.cart_items.select_related("menu_item"))
         total = sum(item.menu_item.price * item.quantity for item in items)
