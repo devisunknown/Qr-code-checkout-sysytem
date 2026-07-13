@@ -1,0 +1,456 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Akwaaba Modern Kitchen | Management Dashboard</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#535353",
+                    "primary-fixed-dim": "#ffb59b",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "primary": "#973100",
+                    "on-surface-variant": "#594139",
+                    "on-tertiary-fixed": "#1b1c1c",
+                    "secondary-container": "#e5e2dc",
+                    "surface-bright": "#fbf9f8",
+                    "primary-container": "#c04000",
+                    "surface-container": "#efeded",
+                    "on-primary-container": "#ffe9e3",
+                    "surface-tint": "#a93700",
+                    "tertiary-fixed": "#e4e2e1",
+                    "error-container": "#ffdad6",
+                    "background": "#fbf9f8",
+                    "inverse-on-surface": "#f2f0f0",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "surface": "#fbf9f8",
+                    "outline": "#8d7167",
+                    "secondary": "#5f5e5a",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#e1bfb4",
+                    "on-primary-fixed-variant": "#812800",
+                    "primary-fixed": "#ffdbcf",
+                    "on-secondary-fixed": "#1c1c18",
+                    "surface-container-low": "#f5f3f3",
+                    "on-background": "#1b1c1c",
+                    "surface-container-high": "#e9e8e7",
+                    "inverse-surface": "#303031",
+                    "surface-dim": "#dbdad9",
+                    "secondary-fixed-dim": "#c9c6c1",
+                    "tertiary-fixed-dim": "#c8c6c6",
+                    "on-primary-fixed": "#380d00",
+                    "inverse-primary": "#ffb59b",
+                    "tertiary-container": "#6c6b6b",
+                    "surface-variant": "#e4e2e2",
+                    "on-secondary-container": "#656460",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#e5e2dc",
+                    "on-surface": "#1b1c1c",
+                    "surface-container-highest": "#e4e2e2",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#efedec",
+                    "on-secondary-fixed-variant": "#474743"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "2xl": "1rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "touch-target-min": "48px",
+                    "margin-mobile": "20px",
+                    "base": "8px",
+                    "margin-desktop": "40px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Montserrat"],
+                    "display-lg": ["Montserrat"],
+                    "headline-lg": ["Montserrat"],
+                    "body-md": ["Inter"],
+                    "price-display": ["Inter"],
+                    "headline-lg-mobile": ["Montserrat"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "34px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      
+      .active-nav-bg {
+        background-color: #c04000;
+        color: #ffffff !important;
+      }
+
+      .chart-bar {
+        transition: height 1s ease-in-out;
+      }
+
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 24px;
+      }
+
+      @keyframes pulse-soft {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+      }
+      .pulse-preparing {
+        animation: pulse-soft 2s infinite ease-in-out;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #fbf9f8;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e1bfb4;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #c04000;
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed overflow-x-hidden">
+<!-- TopNavBar Implementation -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop h-touch-target-min w-full">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Akwaaba Modern Kitchen</h1>
+</div>
+<div class="hidden md:flex flex-1 max-w-xl mx-8">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all" placeholder="Search analytics, orders, or staff..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-base">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full cursor-pointer active:scale-95 duration-200" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full cursor-pointer active:scale-95 duration-200" data-icon="settings">settings</button>
+<div class="ml-2 w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+<img class="w-full h-full object-cover" data-alt="A professional portrait of a modern restaurant manager wearing a crisp white chef coat, smiling warmly. The lighting is soft and professional with a bokeh background of a high-end, contemporary African restaurant interior featuring terracotta and warm wood accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar Implementation -->
+<aside class="fixed left-0 top-0 h-full w-64 pt-20 bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant hidden md:flex flex-col p-4 gap-2">
+<div class="mb-6 px-4">
+<h2 class="font-headline-md text-primary text-lg">Management</h2>
+<p class="font-label-sm text-secondary text-xs">Dashboard v1.0</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<!-- Active State determined as Overview -->
+<a class="flex items-center gap-base px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm">Overview</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-label-sm">Sales Analytics</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-label-sm">Kitchen Performance</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-sm">Menu Management</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-sm">Staff</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-1">
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-sm">Help Center</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-error hover:bg-error-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-sm">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-64 pt-20 px-4 md:px-margin-desktop pb-12 transition-all">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-center justify-between py-8 gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Dashboard Overview</h1>
+<p class="text-on-surface-variant font-body-md">Real-time performance and kitchen insights.</p>
+</div>
+<div class="flex items-center bg-surface-container-high rounded-xl p-1 gap-1">
+<button class="px-4 py-2 rounded-lg bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold transition-all">Today</button>
+<button class="px-4 py-2 rounded-lg text-label-sm text-secondary hover:bg-surface-container-low transition-all">Weekly</button>
+<button class="px-4 py-2 rounded-lg text-label-sm text-secondary hover:bg-surface-container-low transition-all">Monthly</button>
+<div class="h-6 w-[1px] bg-outline-variant mx-1"></div>
+<button class="flex items-center gap-2 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="text-label-sm">Custom Range</span>
+</button>
+</div>
+</div>
+<!-- KPI Cards Section -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
+<!-- Revenue Card -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 rounded-xl bg-primary-fixed text-primary">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</div>
+<span class="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="trending_up">trending_up</span>
+                        +12.5%
+                    </span>
+</div>
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Total Revenue</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">₵{{ total_revenue|floatformat:2 }}</h2>
+<div class="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary w-3/4 group-hover:w-4/5 transition-all duration-700"></div>
+</div>
+</div>
+<!-- Orders Card -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 rounded-xl bg-secondary-fixed text-secondary">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+</div>
+<span class="text-on-surface-variant text-xs font-medium">Yesterday: 124</span>
+</div>
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Total Orders</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">{{ total_orders }}</h2>
+<p class="mt-4 text-label-sm text-primary flex items-center">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="arrow_upward">arrow_upward</span>
+                    19% increase from yesterday
+                </p>
+</div>
+<!-- Efficiency Card -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 rounded-xl bg-on-primary-container text-primary-container">
+<span class="material-symbols-outlined" data-icon="timer">timer</span>
+</div>
+<span class="flex items-center text-primary bg-primary-fixed px-2 py-1 rounded-full text-xs font-bold">
+                        Target: 15m
+                    </span>
+</div>
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Avg. Prep Time</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">{{ avg_prep_time }} <span class="text-headline-md font-normal">min</span></h2>
+<p class="mt-4 text-label-sm text-on-surface-variant">
+                    Slight bottleneck during lunch peak
+                </p>
+</div>
+</div>
+<!-- Sales Trends & Top Dishes Bento Grid -->
+<div class="bento-grid mb-10">
+<!-- Weekly Trends Chart (Simulated) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline-md text-on-surface">Weekly Sales Performance</h3>
+<select class="bg-surface border-outline-variant rounded-lg text-label-sm focus:ring-primary focus:border-primary">
+<option>Gross Revenue</option>
+<option>Net Profit</option>
+</select>
+</div>
+<div class="flex items-end justify-between h-64 gap-4 px-2">
+{% for day in weekly_sales %}
+<div class="flex flex-col items-center flex-1 gap-4 h-full justify-end group">
+<div class="chart-bar w-full bg-secondary-fixed-dim rounded-t-lg group-hover:bg-primary transition-all cursor-pointer" style="height: {{ day.height }}%"></div>
+<span class="text-xs text-on-surface-variant font-bold">{{ day.day }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+<!-- Top Dishes List -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-on-surface">Best Sellers</h3>
+<a class="text-primary font-bold text-label-sm hover:underline" href="#">View All</a>
+</div>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="{{ item.menu_item__name }} image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
+</div>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">{{ item.menu_item__name }}</h4>
+<p class="text-on-surface-variant text-xs">{{ item.total_sold }} orders today</p>
+</div>
+<span class="text-primary font-bold text-label-sm">₵{{ item.total_revenue|floatformat:2 }}</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A bowl of rich, green Palava Sauce with tender beef chunks and large boiled yams. The dish is garnished with sliced peppers. The setting is a contemporary, upscale restaurant with minimalist stoneware and warm wooden surfaces." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs3kIb7pJyoJDWuJtjpUVE1WwLI-AUojVdqWymI2vNk-EHGqpMqGqrvXGWiLl8sexwmEsZrD54c72Gq7GkThmVNd01NlTOORrhKWT3PUbpOYvOxv3KQ0DIh5oq8YoGcEWWDI8DJbcnDlZSgy3dbc6BR0eUdhzNr7ugTD7tZK2qOg7KoqMY8u03_VKdf1qig1aiTOCUz5Uu98Fc1BjuJHwevy3VawTnsChuZ317UseAEr58LscAbemQRob4-G--wnznkWnBLTj1VygF"/>
+</div>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">Palava Sauce &amp; Yam</h4>
+<p class="text-on-surface-variant text-xs">62 orders today</p>
+</div>
+<span class="text-primary font-bold text-label-sm">₵3,100</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A plate of fluffy Waakye (rice and beans) served with black shito pepper sauce, wele, and a boiled egg. The dish is presented artistically on a banana leaf inside a modern white plate. The aesthetic is clean, professional, and culturally grounded." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq6cbh9TFOzF8GtxmggpgSzPIKZwTn_nRAdVi0MoNRAxADBg-wVyGfmqlHudiU9lqOeRlJ0nuCr3MD8af6KcMMkng8a6zaF0mNr6oshOA6aSg5ql4UKP2Gp7R7I_eEihEMmXq5l6kxRxz0smoD8o5K-wSav324DPrBN8sp3d3y0tiJ7a6QLs4ssSYye1xGrJ34KUw1Ol6bK3rvCqPqiLSYXGegwotVxjPN2mh4oWe-VXLDfLANsqn9XVJpFVNavRuUwigY7E1fleDz"/>
+</div>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">Signature Waakye</h4>
+<p class="text-on-surface-variant text-xs">45 orders today</p>
+</div>
+<span class="text-primary font-bold text-label-sm">₵2,250</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Kitchen Status Widget -->
+<section class="bg-surface-container-low p-8 rounded-3xl border-2 border-primary-fixed-dim">
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-primary flex items-center justify-center rounded-2xl text-white">
+<span class="material-symbols-outlined" data-icon="outdoor_grill">outdoor_grill</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface">Live Kitchen Status</h3>
+<p class="text-on-surface-variant text-sm">Real-time order tracking and capacity.</p>
+</div>
+</div>
+<button class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 min-h-touch-target-min">
+                    Manage Kitchen Queue
+                </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Progress Bars -->
+<div class="space-y-6">
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="flex items-center gap-2 font-bold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-primary pulse-preparing"></span>
+                                In Progress
+                            </span>
+<span class="font-bold text-primary">{{ kitchen_status.preparing }} Orders</span>
+</div>
+<div class="h-4 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary transition-all duration-1000" style="width: {{ preparing_percentage }}%"></div>
+</div>
+<p class="mt-2 text-xs text-on-surface-variant">{{ kitchen_status.preparing }} orders are approaching maximum prep time threshold.</p>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<span class="flex items-center gap-2 font-bold text-on-surface">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                Ready to Serve
+                            </span>
+<span class="font-bold text-green-600">{{ kitchen_status.ready }} Orders</span>
+</div>
+<div class="h-4 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-green-500 transition-all duration-1000" style="width: {{ ready_percentage }}%"></div>
+</div>
+<p class="mt-2 text-xs text-on-surface-variant">Average pickup time: {{ avg_prep_time|default:0 }} minutes.</p>
+</div>
+</div>
+<!-- Recent Activity Feed -->
+<div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant max-h-48 overflow-y-auto">
+<h4 class="font-bold text-label-sm text-secondary uppercase tracking-widest mb-4">Recent Milestones</h4>
+<ul class="space-y-4">
+{% for order in recent_orders %}
+<li class="flex items-center gap-3">
+<div class="w-2 h-2 {% if order.status == 'served' %}bg-green-500{% elif order.status == 'ready' %}bg-primary{% elif order.status == 'preparing' %}bg-yellow-500{% else %}bg-gray-500{% endif %} rounded-full"></div>
+<span class="text-sm font-medium text-on-surface">
+{% if order.status == 'served' %}
+Order #{{ order.id }} completed ({{ order.items.first.menu_item.name|default:"Unknown Item" }})
+{% elif order.status == 'ready' %}
+Order #{{ order.id }} ready for pickup
+{% elif order.status == 'preparing' %}
+Order #{{ order.id }} in preparation
+{% else %}
+Order #{{ order.id }} placed
+{% endif %}
+</span>
+<span class="ml-auto text-xs text-on-surface-variant">
+{{ order.placed_at|timesince }} ago
+</span>
+</li>
+{% empty %}
+<li class="flex items-center gap-3">
+<div class="w-2 h-2 bg-gray-500 rounded-full"></div>
+<span class="text-sm font-medium text-on-surface">No recent activity</span>
+<span class="ml-auto text-xs text-on-surface-variant">-</span>
+</li>
+{% endfor %}
+</ul>
+</div>
+</div>
+</section>
+</main>
+<!-- Contextual FAB for quick actions (Suppress on specific views, but useful for Home dashboard) -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-white rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300" data-icon="add">add</span>
+</button>
+<script>
+        // Simple interactive demo logic
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') e.preventDefault();
+                // Simulating navigation state changes
+                if (this.parentElement.tagName === 'NAV') {
+                    document.querySelectorAll('nav a').forEach(el => {
+                        el.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-bold');
+                        el.classList.add('text-secondary', 'hover:text-primary', 'hover:bg-secondary-container');
+                    });
+                    this.classList.remove('text-secondary', 'hover:text-primary', 'hover:bg-secondary-container');
+                    this.classList.add('bg-primary-container', 'text-on-primary-container', 'font-bold');
+                }
+            });
+        });
+
+        // Date selector interaction
+        const dateButtons = document.querySelectorAll('.flex.items-center.bg-surface-container-high button');
+        dateButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                dateButtons.forEach(b => {
+                    b.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'text-primary', 'font-bold');
+                    b.classList.add('text-secondary');
+                });
+                this.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-primary', 'font-bold');
+                this.classList.remove('text-secondary');
+            });
+        });
+    </script>
+    </script>
+   
+</body></html>

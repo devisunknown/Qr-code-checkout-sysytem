@@ -16,4 +16,7 @@ urlpatterns = [
     path("kitchen/display/", views.kitchendisplay, name="kitchendisplay"),
     path("kitchen/order/<int:order_id>/status/", views.advance_order_status, name="advance_order_status"),
     path("kitchen/table/<int:table_id>/mark-ready/", views.mark_table_orders_ready, name="mark_table_orders_ready"),
+    path("kitchen/displaywidget/", views.kitchendisplaywidget, name="kitchendisplaywidget"),
+    path('t/<uuid:qr_token>/help/', views.helpdesk, name='helpdesk'),
+    path("dashboard/", views.management_dashboard, name="dashboard"),
 ]

@@ -10,7 +10,6 @@ from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
 
 
-
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def index(request, qr_token):
     table, session = get_active_session(qr_token)
@@ -76,6 +75,7 @@ def checkout(request, qr_token):
         "total": total,
     })
 
+
 @ratelimit(key='user', rate='5/m', method='GET', block=True)
 def orderstatus(request, qr_token):
     table, session = get_active_session(qr_token)
@@ -88,6 +88,33 @@ def successful_order(request, qr_token):
     table, session = get_active_session(qr_token)
     return render(request, 'successful_order.html', {"table": table, "session": session})
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
+def request_bill(request, qr_token):
+    from .utils import get_active_session
+    table, session = get_active_session(qr_token)
+
+    order = session.orders.exclude(status='served').order_by('-placed_at').first()
+
+    if order:
+        items = list(order.items.all())  # force evaluation before we delete the order
+        total = sum(item.price_at_order * item.quantity for item in items)
+
+        order.bill_requested = True
+        order.save(update_fields=['bill_requested'])
+        order.delete()
+
+        messages.info(request, " Bill requested successfully.")
+    else:
+        items = list(session.cart_items.select_related("menu_item"))
+        total = sum(item.menu_item.price * item.quantity for item in items)
+
+    return render(request, 'request bill.html', {
+        "table": table,
+        "session": session,
+        "order": order,
+        "items": items,
+        "total": total,
+    })
 
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart_update(request, qr_token, item_id):
@@ -157,6 +184,7 @@ def kitchenlogin(request):
 
     return render(request, 'kitchenlogin.html')
 
+
 @ratelimit(key='user', rate='5/m', method='GET', block=True)
 @login_required
 def dashboard(request):
@@ -193,6 +221,7 @@ def advance_order_status(request, order_id):
 
     return redirect("kitchendashboard")
 
+
 @ratelimit(key='user', rate='5/m', method='GET', block=True)
 @login_required
 def kitchendisplay(request):
@@ -205,6 +234,7 @@ def kitchendisplay(request):
         "live_ticket_count": orders.count(),
         "tables_active": TableSession.objects.filter(status__in=["ordering", "awaiting_payment"]).count(),
     })
+
 
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 @login_required
@@ -224,36 +254,144 @@ def mark_table_orders_ready(request, table_id):
                 ready_orders.delete()
             else:
                 messages.info(request, 'No preparing orders found for this table.')
-        except Exception as e:  
+        except Exception as e:
             messages.error(request, f'An error occurred while marking orders as ready: {str(e)}')
     return redirect('kitchendashboard')
 
 
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@login_required
+def kitchendisplaywidget(request):
+    orders = (Order.objects.exclude(status="served")
+              .select_related("table_session__table")
+              .prefetch_related("items__menu_item")
+              .order_by("placed_at"))
+    return render(request, 'kitchendisplaywidget.html', {
+        "orders": orders,
+        "live_ticket_count": orders.count(),
+        "tables_active": TableSession.objects.filter(status__in=["ordering", "awaiting_payment"]).count(),
+        
+    })
+@ratelimit(key='user', rate='5/m', method='GET', block=True)
+def helpdesk(request, qr_token):
+    table, session = get_active_session(qr_token)
+    return render(request, 'helpdesk.html', {"table": table, "session": session})
 
 @ratelimit(key='user', rate='5/m', method='GET', block=True)
-def request_bill(request, qr_token):
-    from .utils import get_active_session
-    table, session = get_active_session(qr_token)
+@login_required
+def management_dashboard(request):
+    from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, fields, DateTimeField
+    from django.db.models.functions import TruncDate
+    from django.utils import timezone
+    from datetime import timedelta
 
-    order = session.orders.exclude(status='served').order_by('-placed_at').first()
 
-    if order:
-        items = list(order.items.all())  # force evaluation before we delete the order
-        total = sum(item.price_at_order * item.quantity for item in items)
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
 
-        order.bill_requested = True
-        order.save(update_fields=['bill_requested'])
-        order.delete()
+    
+    total_revenue = OrderItem.objects.filter(
+        order__paid=True
+    ).aggregate(
+        total=Sum(F('quantity') * F('price_at_order'))
+    )['total'] or 0
 
-        messages.info(request, " Bill requested successfully.")
-    else:
-        items = list(session.cart_items.select_related("menu_item"))
-        total = sum(item.menu_item.price * item.quantity for item in items)
+    
+    total_orders = Order.objects.count()
 
-    return render(request, 'request bill.html', {
-        "table": table,
-        "session": session,
-        "order": order,
-        "items": items,
-        "total": total,
-    })
+    
+    avg_prep_time = Order.objects.filter(
+        status__in=['ready', 'served'],
+        started_preparing_at__isnull=False
+    ).aggregate(
+        avg_time=Avg(
+            ExpressionWrapper(
+                F('started_preparing_at') - F('placed_at'),
+                output_field=fields.DurationField()
+            )
+        )
+    )['avg_time']
+
+    
+    avg_prep_minutes = 0
+    if avg_prep_time:
+        avg_prep_minutes = round(avg_prep_time.total_seconds() / 60)
+
+    
+    weekly_sales = OrderItem.objects.filter(
+        order__paid=True,
+        order__placed_at__date__gte=week_ago
+    ).annotate(
+        date=TruncDate('order__placed_at')
+    ).values('date').annotate(
+        total=Sum(F('quantity') * F('price_at_order'))
+    ).order_by('date')
+
+    
+    weekly_data = []
+    for day in range(7):
+        day_date = today - timedelta(days=6-day)
+        day_data = next((item for item in weekly_sales if item['date'] == day_date), None)
+        if day_data:
+            weekly_data.append({
+                'day': day_date.strftime('%a').upper(),
+                'amount': float(day_data['total']),
+                'height': min(100, max(10, float(day_data['total']) / max(1, float(max([item['total'] for item in weekly_sales], default=1))) * 100)) if max([item['total'] for item in weekly_sales], default=1) > 0 else 10
+            })
+        else:
+            weekly_data.append({
+                'day': day_date.strftime('%a').upper(),
+                'amount': 0,
+                'height': 10
+            })
+            
+    best_sellers = OrderItem.objects.values(
+        'menu_item__name', 'menu_item__price'
+    ).annotate(
+        total_sold=Sum('quantity'),
+        total_revenue=Sum(F('quantity') * F('price_at_order'))
+    ).order_by('-total_sold')[:5]
+
+    # Get live kitchen status (orders by status)
+    kitchen_status = Order.objects.values('status').annotate(
+        count=Count('id')
+    ).order_by('status')
+
+    # Format kitchen status for display
+    status_counts = {
+        'pending': 0,
+        'preparing': 0,
+        'ready': 0,
+        'served': 0
+    }
+    for status in kitchen_status:
+        status_counts[status['status']] = status['count']
+
+    
+    total_active = status_counts['preparing'] + status_counts['ready']
+    preparing_percentage = 0
+    ready_percentage = 0
+    if total_active > 0:
+        preparing_percentage = round((status_counts['preparing'] / total_active) * 100)
+        ready_percentage = round((status_counts['ready'] / total_active) * 100)
+
+
+    recent_orders = Order.objects.select_related('table_session__table').prefetch_related(
+        'items__menu_item'
+    ).order_by('-placed_at')[:10]
+
+    context = {
+        'total_revenue': total_revenue,
+        'total_orders': total_orders,
+        'avg_prep_time': avg_prep_minutes,
+        'weekly_sales': weekly_data,
+        'best_sellers': best_sellers,
+        'kitchen_status': status_counts,
+        'preparing_percentage': preparing_percentage,
+        'ready_percentage': ready_percentage,
+        'recent_orders': recent_orders,
+        'tables_active': TableSession.objects.filter(status__in=["ordering", "awaiting_payment"]).count(),
+    }
+
+    return render(request, 'dashboard.html', context)
+

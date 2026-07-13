@@ -51,15 +51,15 @@
                     "on-surface-variant": "#594139",
                     "on-primary-fixed-variant": "#812800",
                     "on-tertiary-fixed-variant": "#474747",
-                    "inverse-on-surface": "#f2f0f0",
+                    "inverse-on-surface": "$f2f0f0",
                     "surface-tint": "#a93700",
                     "surface-container-low": "#f5f3f3",
                     "error": "#ba1a1a",
                     "primary": "#973100",
-                    "surface-dim": "#dbdad9",
-                    "surface-bright": "#fbf9f8",
-                    "secondary-fixed-dim": "#c9c6c1",
-                    "secondary": "#5f5e5a"
+                    "surface-dim": "$dbdad9",
+                    "surface-bright": "$fbf9f8",
+                    "secondary-fixed-dim": "$c9c6c1",
+                    "secondary": "$5f5e5a"
             },
             "borderRadius": {
                     "DEFAULT": "0.25rem",
@@ -95,7 +95,7 @@
                     "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
                     "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
             }
-          },
+          }
         },
       }
     </script>
@@ -133,14 +133,15 @@
 <span class="material-symbols-outlined">receipt_long</span>
 <span class="font-label-sm text-label-sm">Live Tickets</span>
 </a>
-</nav>
-<div class="px-4 mt-auto space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'dashboard' %}">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-sm text-label-sm">Management Dashboard</span>
+</a>
 <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchenlogin' %}">
 <span class="material-symbols-outlined">logout</span>
 <span class="font-label-sm text-label-sm">Logout</span>
 </a>
-</div>
-</aside>
+</nav>
 
 <!-- Main Content Area -->
 <main class="flex-1 flex flex-col overflow-y-auto">
@@ -164,6 +165,7 @@
     </div>
     {% endfor %}
 {% endif %}
+
 
 
 <!-- Real metrics — only what the data actually supports -->
@@ -232,9 +234,6 @@
 </ul>
 <p class="text-on-surface-variant text-label-sm mb-2">Placed {{ order.placed_at|timesince }} ago</p>
 
-<!-- Single form per order, routed through advance_order_status.
-     No nested <form> here — the "Start preparing" button now lives
-     inside this same outer form instead of a broken inner <form>. -->
 <form action="{% url 'advance_order_status' order_id=order.id %}" method="post" class="pt-2 border-t border-outline-variant">
 {% csrf_token %}
 {% if order.status == 'pending' %}
@@ -254,8 +253,9 @@
 <p class="text-on-surface-variant col-span-full text-center py-12">No live tickets right now.</p>
 {% endfor %}
 </div>
-</section></div>
+</section>
 </main>
+
 </div>
 
 <script>
@@ -263,4 +263,5 @@
     // approximate "live" without websockets.
     setTimeout(() => window.location.reload(), 8000);
 </script>
+
 </body></html>
