@@ -164,7 +164,7 @@
     </div>
     {% endfor %}
 {% endif %}
-
+<div class="bg-surface-container p-4 rounded-xl border-2 mb-4 {% if order.status == 'pending' %}border-error ticket-urgent{% elif order.bill_requested %}border-primary{% else %}border-outline-variant{% endif %}">{% if order.bill_requested %}Bill Requested{% else %}{{ order.get_status_display }}{% endif %}</div>
 
 <!-- Real metrics — only what the data actually supports -->
 <section>

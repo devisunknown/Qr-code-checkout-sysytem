@@ -76,19 +76,19 @@ def checkout(request, qr_token):
     })
 
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 def orderstatus(request, qr_token):
     table, session = get_active_session(qr_token)
     orders = session.orders.prefetch_related("items__menu_item")
     return render(request, 'orderstatus.html', {"table": table, "session": session, "orders": orders})
 
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 def successful_order(request, qr_token):
     table, session = get_active_session(qr_token)
     return render(request, 'successful_order.html', {"table": table, "session": session})
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 def request_bill(request, qr_token):
     from .utils import get_active_session
     table, session = get_active_session(qr_token)
@@ -115,7 +115,7 @@ def request_bill(request, qr_token):
         "items": items,
         "total": total,
     })
-@ratelimit(key='user', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 def cart_update(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
     cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
@@ -136,7 +136,7 @@ def cart_update(request, qr_token, item_id):
     return redirect("table_cart", qr_token=qr_token)
 
 
-@ratelimit(key='user', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 def cart_remove(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
     cart_item = get_object_or_404(CartItem, id=item_id, table_session=session)
@@ -144,7 +144,7 @@ def cart_remove(request, qr_token, item_id):
     return redirect("table_cart", qr_token=qr_token)
 
 
-@ratelimit(key='user', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 def cart_send(request, qr_token):
     table, session = get_active_session(qr_token)
     items = session.cart_items.select_related("menu_item")
@@ -184,7 +184,7 @@ def kitchenlogin(request):
     return render(request, 'kitchenlogin.html')
 
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 @login_required
 def dashboard(request):
     orders = (Order.objects.exclude(status="served")
@@ -225,7 +225,7 @@ def advance_order_status(request, order_id):
     messages.success(request, f"Order #{order.id} marked as {order.get_status_display()}.")
     return redirect("kitchendashboard")
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 @login_required
 def kitchendisplay(request):
     orders = (Order.objects.exclude(status="served")
@@ -262,7 +262,7 @@ def mark_table_orders_ready(request, table_id):
     return redirect('kitchendashboard')
 
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 @login_required
 def kitchendisplaywidget(request):
     orders = (Order.objects.exclude(status="served")
@@ -280,7 +280,7 @@ def helpdesk(request, qr_token):
     table, session = get_active_session(qr_token)
     return render(request, 'helpdesk.html', {"table": table, "session": session})
 
-@ratelimit(key='user', rate='5/m', method='GET', block=True)
+@ratelimit(key='user', rate='60/m', method='GET', block=True)
 @login_required
 def management_dashboard(request):
     from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, fields, DateTimeField
