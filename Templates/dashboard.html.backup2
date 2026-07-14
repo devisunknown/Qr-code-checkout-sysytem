@@ -1,15 +1,13 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Akwaaba Modern Kitchen | Management Dashboard</title>
+{% extends "base.html" %}
+{% block title %}Akwaaba Modern Kitchen | Management Dashboard{% endblock %}
+{% block head %}
+{ super() }
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <!-- Material Symbols -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -107,22 +105,18 @@
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         vertical-align: middle;
       }
-
       .active-nav-bg {
         background-color: #c04000;
         color: #ffffff !important;
       }
-
       .chart-bar {
         transition: height 1s ease-in-out;
       }
-
       .bento-grid {
         display: grid;
         grid-template-columns: repeat(12, 1fr);
         gap: 24px;
       }
-
       @keyframes pulse-soft {
         0%, 100% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.8; transform: scale(1.05); }
@@ -130,7 +124,6 @@
       .pulse-preparing {
         animation: pulse-soft 2s infinite ease-in-out;
       }
-
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -145,10 +138,11 @@
         background: #c04000;
       }
     </style>
-</head>
-<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed overflow-x-hidden">
+{% endblock %}
+{% block content %}
+
 <!-- TopNavBar Implementation -->
-<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop h-touch-target-min">
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop h-touch-target-min w-full">
 <div class="flex items-center gap-4">
 <h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Akwaaba Modern Kitchen</h1>
 </div>
@@ -164,39 +158,48 @@
 <div class="ml-2 w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
 <img class="w-full h-full object-cover" data-alt="A professional portrait of a modern restaurant manager wearing a crisp white chef coat, smiling warmly. The lighting is soft and professional with a bokeh background of a high-end, contemporary African restaurant interior featuring terracotta and warm wood accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
 </div>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Welcome, {{ request.user.username }}</span>
 </div>
 </header>
-
-<!-- SideNavBar: fixed so it stays put while content scrolls -->
-<aside class="fixed left-0 top-0 pt-20 flex flex-col h-full bg-surface-container-low border-r-2 border-outline-variant w-64 shrink-0 z-40 hidden md:flex">
-<div class="px-6 py-8 flex flex-col gap-1">
-<div class="flex items-center gap-3 mb-4">
-<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined text-on-primary-container">restaurant</span>
+<!-- SideNavBar Implementation -->
+<aside class="fixed left-0 top-0 h-full w-64 pt-20 bg-surface-container-low dark:bg-surface-container-lowest border-r border-outline-variant hidden md:flex flex-col p-4 gap-2">
+<div class="mb-6 px-4">
+<h2 class="font-headline-md text-primary text-lg">Management</h2>
+<p class="font-label-sm text-secondary text-xs">Dashboard v1.0</p>
 </div>
-<div>
-<h1 class="font-headline-md text-headline-md text-primary leading-none">Main Kitchen</h1>
-<p class="font-label-sm text-label-sm text-on-surface-variant">Management Dashboard</p>
-</div>
-</div>
-</div>
-<nav class="flex-1 px-4 space-y-2">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchendashboard' %}">
-<span class="material-symbols-outlined">receipt_long</span>
-<span class="font-label-sm text-label-sm">Live Tickets</span>
+<nav class="flex-1 flex flex-col gap-1">
+<!-- Active State determined as Overview -->
+<a class="flex items-center gap-base px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-sm">Overview</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg transition-transform active:scale-98" href="{% url 'dashboard' %}">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-label-sm text-label-sm">Management Dashboard</span>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-label-sm">Sales Analytics</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchenlogin' %}">
-<span class="material-symbols-outlined">logout</span>
-<span class="font-label-sm text-label-sm">Logout</span>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+<span class="font-label-sm">Kitchen Performance</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-sm">Menu Management</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg active:translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-sm">Staff</span>
 </a>
 </nav>
+<div class="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-1">
+<a class="flex items-center gap-base px-4 py-3 text-secondary hover:text-primary hover:bg-secondary-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-sm">Help Center</span>
+</a>
+<a class="flex items-center gap-base px-4 py-3 text-error hover:bg-error-container transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-sm">Logout</span>
+</a>
+</div>
 </aside>
-
 <!-- Main Content Area -->
 <main class="md:ml-64 pt-20 px-4 md:px-margin-desktop pb-12 transition-all">
 <!-- Header Section -->
@@ -224,6 +227,10 @@
 <div class="p-3 rounded-xl bg-primary-fixed text-primary">
 <span class="material-symbols-outlined" data-icon="payments">payments</span>
 </div>
+<span class="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="trending_up">trending_up</span>
+                        +12.5%
+                    </span>
 </div>
 <p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Total Revenue</p>
 <h2 class="font-display-lg text-headline-lg text-on-surface">₵{{ total_revenue|floatformat:2 }}</h2>
@@ -237,9 +244,14 @@
 <div class="p-3 rounded-xl bg-secondary-fixed text-secondary">
 <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
 </div>
+<span class="text-on-surface-variant text-xs font-medium">Yesterday: 124</span>
 </div>
 <p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Total Orders</p>
 <h2 class="font-display-lg text-headline-lg text-on-surface">{{ total_orders }}</h2>
+<p class="mt-4 text-label-sm text-primary flex items-center">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="arrow_upward">arrow_upward</span>
+                    19% increase from yesterday
+                </p>
 </div>
 <!-- Efficiency Card -->
 <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
@@ -253,23 +265,28 @@
 </div>
 <p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Avg. Prep Time</p>
 <h2 class="font-display-lg text-headline-lg text-on-surface">{{ avg_prep_time }} <span class="text-headline-md font-normal">min</span></h2>
+<p class="mt-4 text-label-sm text-on-surface-variant">
+                    Slight bottleneck during lunch peak
+                </p>
 </div>
 </div>
 <!-- Sales Trends & Top Dishes Bento Grid -->
 <div class="bento-grid mb-10">
-<!-- Weekly Trends Chart -->
+<!-- Weekly Trends Chart (Simulated) -->
 <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
 <div class="flex items-center justify-between mb-8">
 <h3 class="font-headline-md text-on-surface">Weekly Sales Performance</h3>
+<select class="bg-surface border-outline-variant rounded-lg text-label-sm focus:ring-primary focus:border-primary">
+<option>Gross Revenue</option>
+<option>Net Profit</option>
+</select>
 </div>
 <div class="flex items-end justify-between h-64 gap-4 px-2">
 {% for day in weekly_sales %}
 <div class="flex flex-col items-center flex-1 gap-4 h-full justify-end group">
-<div class="chart-bar w-full bg-secondary-fixed-dim rounded-t-lg group-hover:bg-primary transition-all cursor-pointer" style="height: {{ day.height }}%" title="₵{{ day.amount|floatformat:2 }}"></div>
+<div class="chart-bar w-full bg-secondary-fixed-dim rounded-t-lg group-hover:bg-primary transition-all cursor-pointer" style="height: {{ day.height }}%"></div>
 <span class="text-xs text-on-surface-variant font-bold">{{ day.day }}</span>
 </div>
-{% empty %}
-<p class="text-on-surface-variant text-center py-4 w-full">No sales data for the past week.</p>
 {% endfor %}
 </div>
 </div>
@@ -277,25 +294,39 @@
 <div class="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
 <div class="flex items-center justify-between mb-6">
 <h3 class="font-headline-md text-on-surface">Best Sellers</h3>
+<a class="text-primary font-bold text-label-sm hover:underline" href="#">View All</a>
 </div>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="{{ item.menu_item__name }} image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
+</div>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">{{ item.menu_item__name }}</h4>
 <div class="space-y-6">
 {% for item in best_sellers %}
 <div class="flex items-center gap-4">
-<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-on-surface-variant">restaurant_menu</span>
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="{{ item.menu_item__name }} image" src="{{ item.menu_item__image|default:"https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_" }}"/>
 </div>
-<div class="flex-1 min-w-0">
-<h4 class="text-on-surface font-bold text-body-md leading-tight truncate">{{ item.menu_item__name }}</h4>
-<p class="text-on-surface-variant text-xs">{{ item.total_sold }} sold</p>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">{{ item.menu_item__name }}</h4>
+<p class="text-on-surface-variant text-xs">{{ item.total_sold }} orders today</p>
 </div>
-<span class="text-primary font-bold text-label-sm whitespace-nowrap">₵{{ item.total_revenue|floatformat:2 }}</span>
+<span class="text-primary font-bold text-label-sm">₵{{ item.total_revenue|floatformat:2 }}</span>
 </div>
 {% empty %}
-<p class="text-on-surface-variant text-center py-4">No sales data yet.</p>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
+</div>
+<div class="flex-1">
+<h4 class="text-on-surface font-bold text-body-md leading-tight">No best sellers yet</h4>
+<p class="text-on-surface-variant text-xs">Start selling to see your top items here</p>
+</div>
+<span class="text-primary font-bold text-label-sm">₵0.00</span>
+</div>
 {% endfor %}
-</div>
-</div>
-</div>
 <!-- Kitchen Status Widget -->
 <section class="bg-surface-container-low p-8 rounded-3xl border-2 border-primary-fixed-dim">
 <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -308,9 +339,9 @@
 <p class="text-on-surface-variant text-sm">Real-time order tracking and capacity.</p>
 </div>
 </div>
-<a href="{% url 'kitchendashboard' %}" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 min-h-touch-target-min inline-flex items-center justify-center">
+<button class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 min-h-touch-target-min">
                     Manage Kitchen Queue
-                </a>
+                </button>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 <!-- Progress Bars -->
@@ -326,6 +357,7 @@
 <div class="h-4 w-full bg-surface-container rounded-full overflow-hidden">
 <div class="h-full bg-primary transition-all duration-1000" style="width: {{ preparing_percentage }}%"></div>
 </div>
+<p class="mt-2 text-xs text-on-surface-variant">{{ kitchen_status.preparing }} orders are approaching maximum prep time threshold.</p>
 </div>
 <div>
 <div class="flex justify-between items-center mb-2">
@@ -347,7 +379,7 @@
 <ul class="space-y-4">
 {% for order in recent_orders %}
 <li class="flex items-center gap-3">
-<div class="w-2 h-2 {% if order.status == 'served' %}bg-green-500{% elif order.status == 'ready' %}bg-primary{% elif order.status == 'preparing' %}bg-yellow-500{% else %}bg-gray-500{% endif %} rounded-full shrink-0"></div>
+<div class="w-2 h-2 {% if order.status == 'served' %}bg-green-500{% elif order.status == 'ready' %}bg-primary{% elif order.status == 'preparing' %}bg-yellow-500{% else %}bg-gray-500{% endif %} rounded-full"></div>
 <span class="text-sm font-medium text-on-surface">
 {% if order.status == 'served' %}
 Order #{{ order.id }} completed ({{ order.items.first.menu_item.name|default:"Unknown Item" }})
@@ -359,7 +391,7 @@ Order #{{ order.id }} in preparation
 Order #{{ order.id }} placed
 {% endif %}
 </span>
-<span class="ml-auto text-xs text-on-surface-variant whitespace-nowrap">
+<span class="ml-auto text-xs text-on-surface-variant">
 {{ order.placed_at|timesince }} ago
 </span>
 </li>
@@ -375,10 +407,16 @@ Order #{{ order.id }} placed
 </div>
 </section>
 </main>
+<!-- Contextual FAB for quick actions (Suppress on specific views, but useful for Home dashboard) -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-white rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-90 transition-transform duration-300" data-icon="add">add</span>
+</button>
 <script>
+        // Simple interactive demo logic
         document.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function(e) {
                 if (this.getAttribute('href') === '#') e.preventDefault();
+                // Simulating navigation state changes
                 if (this.parentElement.tagName === 'NAV') {
                     document.querySelectorAll('nav a').forEach(el => {
                         el.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-bold');
@@ -390,6 +428,7 @@ Order #{{ order.id }} placed
             });
         });
 
+        // Date selector interaction
         const dateButtons = document.querySelectorAll('.flex.items-center.bg-surface-container-high button');
         dateButtons.forEach(btn => {
             btn.addEventListener('click', function() {
@@ -402,4 +441,7 @@ Order #{{ order.id }} placed
             });
         });
     </script>
-</body></html>
+    </script>
+   
+
+{% endblock %}

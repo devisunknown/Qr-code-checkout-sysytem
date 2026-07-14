@@ -51,15 +51,15 @@
                     "on-surface-variant": "#594139",
                     "on-primary-fixed-variant": "#812800",
                     "on-tertiary-fixed-variant": "#474747",
-                    "inverse-on-surface": "#f2f0f0",
+                    "inverse-on-surface": "$f2f0f0",
                     "surface-tint": "#a93700",
                     "surface-container-low": "#f5f3f3",
                     "error": "#ba1a1a",
                     "primary": "#973100",
-                    "surface-dim": "#dbdad9",
-                    "surface-bright": "#fbf9f8",
-                    "secondary-fixed-dim": "#c9c6c1",
-                    "secondary": "#5f5e5a"
+                    "surface-dim": "$dbdad9",
+                    "surface-bright": "$fbf9f8",
+                    "secondary-fixed-dim": "$c9c6c1",
+                    "secondary": "$5f5e5a"
             },
             "borderRadius": {
                     "DEFAULT": "0.25rem",
@@ -142,7 +142,6 @@
 <span class="font-label-sm text-label-sm">Logout</span>
 </a>
 </nav>
-</aside>
 
 <!-- Main Content Area -->
 <main class="flex-1 flex flex-col overflow-y-auto">
@@ -152,8 +151,8 @@
 <div class="font-headline-md text-headline-md font-bold text-primary">Akwaaba Modern Kitchen</div>
 <div class="flex items-center gap-4">
 <span class="font-label-sm text-label-sm text-on-surface-variant">Welcome, {{ request.user.username }}</span>
-<div class="ml-2 w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-<img class="w-full h-full object-cover" data-alt="A professional portrait of a modern restaurant manager wearing a crisp white chef coat, smiling warmly. The lighting is soft and professional with a bokeh background of a high-end, contemporary African restaurant interior featuring terracotta and warm wood accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2IyIyJsJ5PJVmPMkPy4juvlfCsRILEY4rhfIbGVkVzReBkD-9r69FaqTzbw0bCG2ZyxmcyMZJmVlH04wBEH4CAabYja4Be6a0TH7ggsobsa_q5nqOeUBgQGXFvqsMgqyTv1ABeUFPEQ_IxloER5oJL47KTGQzp1P-9xBE-dzzbAk4hxAWYdYEG-39vSr5GDK0rj5Qj2zafstvK0kXmKhqEfS4FBv8EvXPaaSauj76Q_B9UmMAy09i-yplw43fpcuQM6RZW2SqZDW_"/>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
 </div>
 </div>
 </header>
@@ -205,7 +204,13 @@
 {% for table in table_group %}
 <div class="bg-surface-container p-6 rounded-2xl border-2 border-outline-variant">
 <div class="flex justify-between items-center mb-4">
-    <h3 class="font-headline-md text-headline-md">Table {{ table.grouper.number }}</h3> 
+    <h3 class="font-headline-md text-headline-md">Table {{ table.grouper.number }}</h3>
+    <div>
+        <form action="{% url 'mark_table_orders_ready' table.grouper.id %}" method="post" class="ml-2">
+            {% csrf_token %}
+            <button type="submit" class="bg-primary text-on-primary font-bold py-1 px-3 rounded-xl">Done Preparing</button>
+        </form>
+    </div>
 </div>
 {% for order in table.list %}
 <div class="bg-surface-container p-4 rounded-xl border-2 mb-4 {% if order.status == 'pending' %}border-error ticket-urgent{% elif order.bill_requested %}border-primary{% else %}border-outline-variant{% endif %}">
@@ -249,9 +254,6 @@
 {% endfor %}
 </div>
 </section>
-
-</div>
-
 </main>
 
 </div>

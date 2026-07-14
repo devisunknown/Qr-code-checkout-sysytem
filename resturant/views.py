@@ -93,18 +93,18 @@ def request_bill(request, qr_token):
     from .utils import get_active_session
     table, session = get_active_session(qr_token)
 
-    order = session.orders.exclude(status='served').order_by('-placed_at').first()
+    orders = session.orders.exclude(status='served')
 
-    if order:
-        items = list(order.items.all())  # force evaluation before we delete the order
+    if orders.exists():
+        orders.update(bill_requested=True)
+
+        items = list(OrderItem.objects.filter(order__in=orders).select_related("menu_item"))
         total = sum(item.price_at_order * item.quantity for item in items)
 
-        order.bill_requested = True
-        order.save(update_fields=['bill_requested'])
-        order.delete()
-
-        messages.info(request, " Bill requested successfully.")
+        order = orders.order_by('-placed_at').first()  # most recent, for display on this page
+        messages.info(request, "Bill requested successfully.")
     else:
+        order = None
         items = list(session.cart_items.select_related("menu_item"))
         total = sum(item.menu_item.price * item.quantity for item in items)
 
@@ -115,7 +115,6 @@ def request_bill(request, qr_token):
         "items": items,
         "total": total,
     })
-
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart_update(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
@@ -203,10 +202,14 @@ def dashboard(request):
 
 VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
 
-@ratelimit(key='user', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='60/m', method='POST', block=False)
 @login_required
 @require_POST
 def advance_order_status(request, order_id):
+    if getattr(request, 'limited', False):
+        messages.error(request, "You're updating tickets too quickly — please wait a moment and try again.")
+        return redirect("kitchendashboard")
+
     order = get_object_or_404(Order, id=order_id)
     new_status = request.POST.get("status")
 
@@ -219,8 +222,8 @@ def advance_order_status(request, order_id):
         order.started_preparing_at = timezone.now()
     order.save()
 
+    messages.success(request, f"Order #{order.id} marked as {order.get_status_display()}.")
     return redirect("kitchendashboard")
-
 
 @ratelimit(key='user', rate='5/m', method='GET', block=True)
 @login_required
@@ -236,7 +239,7 @@ def kitchendisplay(request):
     })
 
 
-@ratelimit(key='user', rate='5/m', method='POST', block=True)
+@ratelimit(key='user', rate='60/m', method='POST', block=True)
 @login_required
 def mark_table_orders_ready(request, table_id):
     if request.method == 'POST':

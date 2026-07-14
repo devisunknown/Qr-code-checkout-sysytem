@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Bill Requested - Akwaaba Feast</title>
+<title>Order Successful - Akwaaba Feast</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -157,58 +157,74 @@
 <div class="absolute -top-20 -right-20 w-80 h-80 bg-primary-fixed opacity-20 rounded-full blur-3xl"></div>
 <div class="absolute -bottom-40 -left-20 w-96 h-96 bg-secondary-fixed opacity-30 rounded-full blur-3xl"></div>
 </div>
-<!-- Requested Bill Card -->
+<!-- Success Celebration Card -->
 <div class="w-full max-w-md bg-surface-container-lowest rounded-2xl p-base p-8 shadow-lg text-center relative z-10 border border-surface-container">
 <!-- Icon State -->
 <div class="relative inline-block mb-8">
 <div class="w-24 h-24 bg-primary text-white rounded-full flex items-center justify-center success-glow animate-float">
 <svg class="w-12 h-12 fill-none stroke-current stroke-2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-<path d="M4 7h4m0 0v4m-4-4h14M4 7l2 2M4 11l2-2" stroke-linecap="round" stroke-linejoin="round"></path>
+<path class="check-path" d="M20 6L9 17L4 12" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
 </div>
-<!-- Decorative confetti pieces (we can keep or remove) -->
+<!-- Decorative confetti pieces -->
 <div class="absolute -top-4 -left-2 w-3 h-3 bg-primary-fixed rounded-full"></div>
 <div class="absolute top-0 -right-4 w-4 h-4 bg-secondary-fixed rotate-45"></div>
 <div class="absolute -bottom-2 right-0 w-2 h-2 bg-primary"></div>
 </div>
 <!-- Headlines -->
 <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-3">
-Bill Requested
-</h1>
+                Payment Successful
+            </h1>
 <p class="font-body-md text-body-md text-on-surface-variant mb-8 px-4">
-Your bill has been requested. Our staff will bring the bill to your table shortly.
-</p>
-<!-- Order Details -->
-{% if items %}
-<div class="mt-6 border-t border-slate-200 dark:border-slate-800 pt-5 space-y-3">
-{% for item in items %}
-<div class="flex justify-between gap-3">
-<span>{{ item.quantity }} x {{ item.menu_item.name }}</span>
-<span>GH₵ {{ item.line_total }}</span>
+                Thank you! Your payment has been received and your order is being finalized.
+            </p>
+<!-- Order Details Bento Fragment -->
+<div class="bg-surface-container-low rounded-xl p-6 mb-8 flex flex-col gap-4 border border-outline-variant/30">
+<div class="flex justify-between items-center border-b border-outline-variant/20 pb-3">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Order Reference</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">#8821</span>
 </div>
-{% endfor %}
-<div class="border-t border-slate-200 dark:border-slate-800 pt-3 flex justify-between font-bold text-lg">
-<span>Total</span>
-<span>GH₵ {{ total }}</span>
+<div class="flex items-center gap-4 text-left">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Estimated Serving Time</p>
+<p class="font-body-md text-body-md font-bold text-on-surface">15 - 20 minutes</p>
 </div>
 </div>
-{% else %}
-<div class="mt-6 text-center">
-<p class="text-slate-600 dark:text-slate-400">No items in your cart.</p>
+<div class="flex items-center gap-4 text-left">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">table_restaurant</span>
 </div>
-{% endif %}
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Dining Location</p>
+<p class="font-body-md text-body-md font-bold text-on-surface">Table 12 • Indoor Terrace</p>
+</div>
+</div>
+</div>
 <!-- Primary Action -->
-<div class="mt-6 flex gap-3">
-<a href="{% url 'table_menu' qr_token=table.qr_token %}" class="w-full bg-primary text-on-primary font-body-md font-bold py-4 rounded-xl min-h-[56px] shadow-md hover:bg-primary-container transition-all active:scale-95">
-Continue Browsing
-</a>
-<a href="{% url 'orderstatus' qr_token=table.qr_token %}" class="w-full text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
-View Orders
-</a>
-</div>
+<button class="w-full bg-primary text-on-primary font-body-md font-bold py-4 rounded-xl min-h-[56px] shadow-md hover:bg-primary-container transition-all active:scale-95 mb-4" onclick="window.location.reload()">
+                Back to Menu
+            </button>
+<button class="w-full text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
+                View Receipt Details
+            </button>
 </div>
 <!-- Decorative Menu Preview (Asymmetric Accent) -->
 <div class="mt-12 w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+<div class="h-32 rounded-2xl overflow-hidden shadow-sm rotate-2">
+<img class="w-full h-full object-cover" data-alt="A macro photography shot of Jollof rice served in a traditional clay pot, glowing under warm ambient lighting, rich terracotta tones, West African aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvKV6Y5bGmu5XBH09WpOnVTg8uFdw_Hcmjdx342mS0z7NQyiA5FVmq2gxktC4F9jTtRiWrF9_IuKBIVTZBkIxGz-BiT5xn3j0HIFrs1yJeTczO4w73JjyCz98vCBuLqTyyefilXfYfvaLQQ95ob85wFc7qtbfmmlBWv888ahx29BaCGA29owEjHqbviOnpckR4wOfySrDE_1jwqDqXj-RTyG6QNHh5iOlGrP0oO54V7am0Ry_lEYHFElzPNyk0-6oxuNXoZhI-qFvc"/>
+</div>
+<div class="h-32 rounded-2xl overflow-hidden shadow-sm -rotate-3 mt-4">
+<img class="w-full h-full object-cover" data-alt="A vibrant plate of grilled tilapia garnished with sliced peppers and onions, warm golden lighting, rustic wooden table background, high-contrast food photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxgsKmfa5oLLPSTwxcHGvQ5By8DIYm6sTUPoorbvvoanBOdJqD7ge08f99ubMzkFFTMTxKPKGSgtaPE2ys70ygESXJ-uH2Ve34QXQS-P16kTQ8NGWBEneRTqQj3n-n-vAsj6qXqvgFY-UDVPXEGVeRUBFoCVUhd9HgmgyqZgX_twBgFbPz5BMn3Tjb7M290Swmt4B0MWYXryHdnhtydpP8C4vtI50l-IG4hmC_kLiBec8rqcCOrPLy_IPXuyUf2jSadg4RekJCgv7j"/>
+</div>
+<div class="h-32 rounded-2xl overflow-hidden shadow-sm rotate-1 hidden md:block">
+<img class="w-full h-full object-cover" data-alt="Assorted West African skewers or kebabs known as Suya, dusted with spice rub, dramatic moody lighting, vibrant orange and charcoal color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwxlhyn5k0DLKJxQJMrAstD6MwmH7x1JFDACsVhhLF0X6SV4VgFsxNsdcn-iknr5GZQguOV0QX0bb3EfGmYF8lC-3Z4onKJMxZlmQWhGG5io4kP345qFM4OLpw06G7cxC7J3svyTk1-NiaANGE7oYJi6IEd3WPPvxsrGho23XOJMvoBj1esYHXBWlF2GvxJBTclbmsn7GjglzV9yt-W2rfpKa12A7A_O9tHESnDECXXLzFwUdNYrETDtFyjn_UGk-QqznBvPnuoxzr"/>
+</div>
+<div class="h-32 rounded-2xl overflow-hidden shadow-sm -rotate-6 hidden md:block">
+<img class="w-full h-full object-cover" data-alt="Traditional fufu served with a rich, dark green palmnut soup, close-up details showing texture, warm earthy tones, inviting restaurant atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbm-8Z5u8g4KaWrulYZbEB9bp_p5n0XUfSCrvqdB_PZ4BJCLTzVp1hfO-OcLtGNJwo8IdX_QxHUtxpslbY-VIVPcIp7k5oQTYmvnVUiG9gz0kY5TQXbBdpZrsPjALTyxGdekNCmWn3PQW3HQ9v226X-wBaFTM7AeRq9mib9UdERigLb-LipEnXz5tElsTeDYShXeSg6JQTl7tNcCd42bYUF_9s9aLt7acB1W255JGT5ZsxQvVwSq49DLfYActK7TK63v43sB8cCLcC"/>
+</div>
 </div>
 </main>
 <!-- Footer Identity -->
@@ -229,18 +245,18 @@ View Orders
         <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
         <span class="font-label-sm text-label-sm">Menu</span>
     </a>
-    <!-- Orders -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'orderstatus' qr_token=table.qr_token %}">
+    <!-- Orders (ACTIVE) -->
+    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'orderstatus' qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
         <span class="font-label-sm text-label-sm">Orders</span>
     </a>
-    <!-- Cart (ACTIVE) -->
-    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'table_cart' qr_token=table.qr_token %}">
+    <!-- Cart -->
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_cart' qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
         <span class="font-label-sm text-label-sm">Cart</span>
     </a>
     <!-- Help -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' %}">
         <span class="material-symbols-outlined" data-icon="help_outline" style="font-variation-settings: 'FILL' 1;">help_outline</span>
         <span class="font-label-sm text-label-sm">Help</span>
     </a>
