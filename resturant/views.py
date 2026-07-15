@@ -193,12 +193,15 @@ def dashboard(request):
                   .order_by("placed_at"))
     live_ticket_count = orders.count()
     tables_active = orders.values('table_session__table').distinct().count()
+    tables_with_bill_request = set(
+        orders.filter(bill_requested=True).values_list('table_session__table_id', flat=True)
+    )
     return render(request, 'kitchendashboard.html', {
         "orders": orders,
         "live_ticket_count": live_ticket_count,
         "tables_active": tables_active,
+        "tables_with_bill_request": tables_with_bill_request,
     })
-
 
 VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
 
@@ -292,17 +295,12 @@ def management_dashboard(request):
     today = timezone.now().date()
     week_ago = today - timedelta(days=7)
 
-    
-    total_revenue = OrderItem.objects.filter(
-        order__paid=True
-    ).aggregate(
+    total_revenue = OrderItem.objects.aggregate(
         total=Sum(F('quantity') * F('price_at_order'))
     )['total'] or 0
 
-    
     total_orders = Order.objects.count()
 
-    
     avg_prep_time = Order.objects.filter(
         status__in=['ready', 'served'],
         started_preparing_at__isnull=False
@@ -315,14 +313,11 @@ def management_dashboard(request):
         )
     )['avg_time']
 
-    
     avg_prep_minutes = 0
     if avg_prep_time:
         avg_prep_minutes = round(avg_prep_time.total_seconds() / 60)
 
-    
     weekly_sales = OrderItem.objects.filter(
-        order__paid=True,
         order__placed_at__date__gte=week_ago
     ).annotate(
         date=TruncDate('order__placed_at')
@@ -330,7 +325,6 @@ def management_dashboard(request):
         total=Sum(F('quantity') * F('price_at_order'))
     ).order_by('date')
 
-    
     weekly_data = []
     for day in range(7):
         day_date = today - timedelta(days=6-day)
@@ -347,7 +341,7 @@ def management_dashboard(request):
                 'amount': 0,
                 'height': 10
             })
-            
+
     best_sellers = OrderItem.objects.values(
         'menu_item__name', 'menu_item__price'
     ).annotate(
@@ -355,12 +349,10 @@ def management_dashboard(request):
         total_revenue=Sum(F('quantity') * F('price_at_order'))
     ).order_by('-total_sold')[:5]
 
-    # Get live kitchen status (orders by status)
     kitchen_status = Order.objects.values('status').annotate(
         count=Count('id')
     ).order_by('status')
 
-    # Format kitchen status for display
     status_counts = {
         'pending': 0,
         'preparing': 0,
@@ -370,14 +362,12 @@ def management_dashboard(request):
     for status in kitchen_status:
         status_counts[status['status']] = status['count']
 
-    
     total_active = status_counts['preparing'] + status_counts['ready']
     preparing_percentage = 0
     ready_percentage = 0
     if total_active > 0:
         preparing_percentage = round((status_counts['preparing'] / total_active) * 100)
         ready_percentage = round((status_counts['ready'] / total_active) * 100)
-
 
     recent_orders = Order.objects.select_related('table_session__table').prefetch_related(
         'items__menu_item'
@@ -397,4 +387,3 @@ def management_dashboard(request):
     }
 
     return render(request, 'dashboard.html', context)
-
