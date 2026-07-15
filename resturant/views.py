@@ -90,7 +90,6 @@ def successful_order(request, qr_token):
 
 @ratelimit(key='user', rate='60/m', method='GET', block=True)
 def request_bill(request, qr_token):
-    from .utils import get_active_session
     table, session = get_active_session(qr_token)
 
     orders = session.orders.exclude(status='served')
@@ -99,14 +98,18 @@ def request_bill(request, qr_token):
         orders.update(bill_requested=True)
 
         items = list(OrderItem.objects.filter(order__in=orders).select_related("menu_item"))
-        total = sum(item.price_at_order * item.quantity for item in items)
+        for item in items:
+            item.line_total = item.price_at_order * item.quantity
+        total = sum(item.line_total for item in items)
 
-        order = orders.order_by('-placed_at').first()  # most recent, for display on this page
+        order = orders.order_by('-placed_at').first()
         messages.info(request, "Bill requested successfully.")
     else:
         order = None
         items = list(session.cart_items.select_related("menu_item"))
-        total = sum(item.menu_item.price * item.quantity for item in items)
+        for item in items:
+            item.line_total = item.menu_item.price * item.quantity
+        total = sum(item.line_total for item in items)
 
     return render(request, 'request bill.html', {
         "table": table,
@@ -115,6 +118,8 @@ def request_bill(request, qr_token):
         "items": items,
         "total": total,
     })
+
+
 @ratelimit(key='user', rate='60/m', method='POST', block=True)
 def cart_update(request, qr_token, item_id):
     table, session = get_active_session(qr_token)
