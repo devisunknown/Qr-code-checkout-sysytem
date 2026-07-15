@@ -19,4 +19,5 @@ urlpatterns = [
     path("kitchen/displaywidget/", views.kitchendisplaywidget, name="kitchendisplaywidget"),
     path('t/<uuid:qr_token>/help/', views.helpdesk, name='helpdesk'),
     path("dashboard/", views.management_dashboard, name="dashboard"),
+    path("table/<int:table_id>/close/", views.close_table_session, name="close_table_session"),
 ]

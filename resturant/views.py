@@ -392,3 +392,23 @@ def management_dashboard(request):
     }
 
     return render(request, 'dashboard.html', context)
+
+
+from django.utils import timezone
+
+@ratelimit(key='user', rate='30/m', method='POST', block=True)
+@login_required
+@require_POST
+def close_table_session(request, table_id):
+    table = get_object_or_404(Table, id=table_id)
+    session = TableSession.objects.filter(
+        table=table, status__in=["ordering", "awaiting_payment"]
+    ).first()
+    if session:
+        session.orders.update(paid=True)
+        session.status = "closed"
+        session.is_active = False
+        session.closed_at = timezone.now()
+        session.save()
+        messages.success(request, f"Table {table.number} closed and ready for the next guests.")
+    return redirect("kitchendashboard")
