@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Order Status - Table 5</title>
+<title>Lintage Resturant Order Status - Table{{table.name}}</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -202,6 +202,21 @@
 </div>
 {% endif %}
 </div>
+ <!-- Footer / Maker Info -->
+      <footer class="text-center py-6 border-t border-outline-variant">
+        <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">
+          Developed by Scancoat Systems Consult
+        </p>
+
+        <div class="mt-4 flex justify-center gap-4 opacity-40">
+          <span class="material-symbols-outlined text-xl" data-icon="verified"
+            >verified</span
+          >
+          <span class="material-symbols-outlined text-xl" data-icon="security"
+            >security</span
+          >
+        </div>
+      </footer>
 </main>
 <!-- Bottom Action Bar (Persistent Request Bill) -->
 <div class="fixed bottom-24 left-0 right-0 px-margin-mobile pointer-events-none z-40">

@@ -4,7 +4,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Table {{ table.number }} - Your Shared Cart</title>
+<title>Lintage Resturant Table {{ table.number }} - Your Shared Cart</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -124,7 +124,7 @@
 <header class="docked full-width top-0 sticky z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-margin-mobile h-touch-target-min">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="restaurant">restaurant</span>
-<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">Table {{ table.number }}</h1>
+<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">Lintage resturant Table {{ table.number }}</h1>
 </div>
 <button class="hover:bg-surface-variant dark:hover:bg-on-secondary-fixed-variant transition-colors p-2 rounded-full active:scale-95 transition-transform duration-200">
 <span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim" data-icon="account_circle">account_circle</span>
@@ -221,7 +221,21 @@
             </a>
 </div>
 {% endif %}
+ <!-- Footer / Maker Info -->
+      <footer class="text-center py-6 border-t border-outline-variant">
+        <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">
+          Developed by Scancoat Systems Consult
+        </p>
 
+        <div class="mt-4 flex justify-center gap-4 opacity-40">
+          <span class="material-symbols-outlined text-xl" data-icon="verified"
+            >verified</span
+          >
+          <span class="material-symbols-outlined text-xl" data-icon="security"
+            >security</span
+          >
+        </div>
+      </footer>
 </main>
 
 <!-- BottomNavBar -->
