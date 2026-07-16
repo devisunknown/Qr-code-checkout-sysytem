@@ -13,7 +13,12 @@ from django_ratelimit.decorators import ratelimit
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def index(request, qr_token):
     table, session = get_active_session(qr_token)
+    query = request.GET.get("q", "").strip()
+
     menu_items = MenuItem.objects.filter(is_available=True).select_related("category")
+    if query:
+        menu_items = menu_items.filter(name__icontains=query)
+
     categories = Category.objects.all()
     cart_items = session.cart_items.select_related("menu_item")
     cart_count = sum(item.quantity for item in cart_items)
@@ -25,8 +30,8 @@ def index(request, qr_token):
         "categories": categories,
         "cart_count": cart_count,
         "cart_total": cart_total,
+        "query": query,
     })
-
 
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def cart(request, qr_token):
