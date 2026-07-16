@@ -197,11 +197,12 @@ def kitchenlogin(request):
 @ratelimit(key='user', rate='60/m', method='GET', block=True)
 @login_required
 def dashboard(request):
-    orders = (Order.objects.exclude(status="served")
+    orders = (Order.objects
+                  .filter(table_session__status__in=["ordering", "awaiting_payment"])
                   .select_related("table_session__table")
                   .prefetch_related("items__menu_item")
                   .order_by("placed_at"))
-    live_ticket_count = orders.count()
+    live_ticket_count = orders.exclude(status="served").count()
     tables_active = orders.values('table_session__table').distinct().count()
     tables_with_bill_request = set(
         orders.filter(bill_requested=True).values_list('table_session__table_id', flat=True)

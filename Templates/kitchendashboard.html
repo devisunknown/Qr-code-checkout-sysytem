@@ -231,6 +231,7 @@
   {% if order.status == 'pending' %}bg-error text-white
   {% elif order.status == 'preparing' %}bg-primary text-on-primary
   {% elif order.status == 'ready' %}bg-primary-container text-on-primary-container
+  {% elif order.status == 'served' %}bg-surface-container-high text-on-surface-variant
   {% endif %}">
   {{ order.get_status_display }}
 </span>
