@@ -1,4 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
+from django.template.loader import render_to_string
+from django.http import HttpResponse
 from .utils import get_active_session,TableSession,Table
 from .models import MenuItem, Table, TableSession, CartItem, Category, Order, OrderItem
 from django.contrib.auth import authenticate,login
@@ -86,6 +88,24 @@ def orderstatus(request, qr_token):
     table, session = get_active_session(qr_token)
     orders = session.orders.prefetch_related("items__menu_item")
     return render(request, 'orderstatus.html', {"table": table, "session": session, "orders": orders})
+
+
+@ratelimit(key='user', rate='120/m', method='GET', block=True)
+def orderstatus_refresh(request, qr_token):
+    """Returns just the order timeline HTML fragment, for AJAX polling on the
+    order status page. Renders the exact same partial/context as the full
+    page view, so there is a single source of truth for the markup."""
+    table, session = get_active_session(qr_token)
+    orders = session.orders.prefetch_related("items__menu_item")
+    all_served = orders.exists() and not orders.exclude(status="served").exists()
+    html = render_to_string('partials/order_timeline.html', {
+        "table": table,
+        "session": session,
+        "orders": orders,
+    }, request=request)
+    response = HttpResponse(html, content_type="text/html")
+    response["X-All-Served"] = "1" if all_served else "0"
+    return response
 
 
 @ratelimit(key='user', rate='60/m', method='GET', block=True)

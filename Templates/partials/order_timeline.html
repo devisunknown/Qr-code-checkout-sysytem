@@ -1,0 +1,62 @@
+<div class="relative space-y-8 before:content-[''] before:absolute before:left-[19px] before:top-4 before:bottom-4 before:w-[2px] before:bg-outline-variant" id="order-timeline">
+{% if orders %}
+    {% for order in orders %}
+    <div class="relative pl-12 group">
+        <div class="absolute left-0 top-0 w-[40px] h-[40px] flex items-center justify-center rounded-full {% if order.status == 'preparing' %}bg-primary preparing-pulse{% elif order.status == 'served' %}bg-inverse-surface{% else %}bg-primary{% endif %} z-10 shadow-sm">
+            <span class="material-symbols-outlined {% if order.status == 'served' %}text-surface{% else %}text-white{% endif %} text-[20px]" data-icon="{% if order.status == 'served' %}done_all{% elif order.status == 'ready' %}restaurant_menu{% else %}cooking{% endif %}" style="font-variation-settings: 'FILL' 1;">{% if order.status == 'served' %}done_all{% elif order.status == 'ready' %}restaurant_menu{% else %}cooking{% endif %}</span>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.02)] transition-all hover:shadow-md">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Ticket #{{ forloop.counter }}</span>
+                    <h3 class="font-headline-md text-headline-md mt-1">Order placed at {{ order.placed_at|date:"H:i" }}</h3>
+                </div>
+                <span class="px-3 py-1 {% if order.status == 'served' %}bg-inverse-surface text-surface-bright{% elif order.status == 'ready' %}bg-primary text-white{% else %}bg-primary text-white{% endif %} rounded-full font-label-sm text-label-sm flex items-center gap-1.5">
+                    {% if order.status == 'served' %}Served{% elif order.status == 'ready' %}Ready{% elif order.status == 'preparing' %}Preparing{% else %}Pending{% endif %}
+                </span>
+            </div>
+            <div class="space-y-4">
+                {% for item in order.items.all %}
+                <div class="flex items-center gap-4 py-3 border-t border-surface-variant">
+                    <div class="w-16 h-16 rounded-xl overflow-hidden bg-secondary-container">
+                        {% if item.menu_item.image %}
+                        <img class="w-full h-full object-cover" src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}" />
+                        {% else %}
+                        <div class="w-full h-full flex items-center justify-center text-secondary text-xs">{{ item.menu_item.name }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow">
+                        <p class="text-body-md text-on-surface">{{ item.quantity }}x {{ item.menu_item.name }}</p>
+                        <p class="text-label-sm text-secondary">{% if item.notes %}{{ item.notes }}{% else %}{{ item.menu_item.description|default:"Freshly prepared" }}{% endif %}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-label-sm text-secondary py-2">No items for this order yet.</p>
+                {% endfor %}
+                <div class="flex items-center justify-between pt-2">
+                    <div class="flex items-center gap-2 text-primary font-label-sm text-label-sm">
+                        <span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                        <span>
+                            {% if order.status == 'served' %}Enjoy your meal{% elif order.status == 'ready' %}Your order is ready{% elif order.status == 'preparing' %}Approx. 12 mins left{% else %}Waiting for kitchen confirmation{% endif %}
+                        </span>
+                    </div>
+                    <div class="h-1.5 w-32 bg-surface-variant rounded-full overflow-hidden">
+                        {% if order.status == 'served' or order.status == 'ready' %}
+                        <div class="h-full bg-primary w-full"></div>
+                        {% elif order.status == 'preparing' %}
+                        <div class="h-full bg-primary w-2/3"></div>
+                        {% else %}
+                        <div class="h-full bg-primary w-1/3"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="glass-card rounded-2xl p-5 border border-surface-variant shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+    <p class="text-body-md text-on-surface">No orders yet. Start ordering from the menu to see your status here.</p>
+</div>
+{% endif %}
+</div>
