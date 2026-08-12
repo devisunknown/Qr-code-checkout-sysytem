@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv() 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -84,16 +87,15 @@ WSGI_APPLICATION = 'orderingres.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-import sys
-print(f"DEBUG DB HOST: {DATABASES['default'].get('HOST')}", file=sys.stderr)
-print(f"DEBUG DB NAME: {DATABASES['default'].get('NAME')}", file=sys.stderr)
 
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'
-    )
-}
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=60)
+} 
+
+
+
+
 
 
 # Password validation
