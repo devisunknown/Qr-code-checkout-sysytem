@@ -84,6 +84,10 @@ WSGI_APPLICATION = 'orderingres.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+import sys
+print(f"DEBUG DB HOST: {DATABASES['default'].get('HOST')}", file=sys.stderr)
+print(f"DEBUG DB NAME: {DATABASES['default'].get('NAME')}", file=sys.stderr)
+
 
 DATABASES = {
     'default': dj_database_url.config(
