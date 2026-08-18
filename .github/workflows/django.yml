@@ -23,7 +23,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          # Caching pip dependencies significantly speeds up workflow execution
           cache: 'pip'
 
       - name: Install Dependencies
@@ -32,9 +31,10 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run Django Checks
-        run: |
-          python manage.py check
+        run: python manage.py check
+
+      - name: Run Migrations
+        run: python manage.py migrate
 
       - name: Run Tests
-        run: |
-          python manage.py test
+        run: python manage.py test
