@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Staff Login | Lintage Modern Kitchen</title>
+<title>Staff Login | {{ restaurant.name|default:"Staff Portal" }}</title>
     <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -131,7 +131,7 @@
                 <div class="inline-flex items-center justify-center mb-4 p-4 rounded-full bg-surface-container-high">
                     <span class="material-symbols-outlined text-primary text-4xl" data-icon="restaurant_menu">restaurant_menu</span>
                 </div>
-                <h1 class="font-headline-md text-headline-md text-primary tracking-tight">Lintage Modern Kitchen</h1>
+                <h1 class="font-headline-md text-headline-md text-primary tracking-tight">{{ restaurant.name|default:"Staff Portal" }}</h1>
                 <p class="font-label-sm text-label-sm text-on-surface-variant mt-1 uppercase tracking-widest">Staff Portal Access</p>
             </div>
 

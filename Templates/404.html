@@ -94,8 +94,12 @@
 <!-- TopAppBar -->
 <header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline flex justify-between items-center px-margin-mobile h-touch-target-min">
 <div class="flex items-center gap-2 transition-transform active:scale-95">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name|default:'Our Restaurant' }}" class="w-8 h-8 rounded-full object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="restaurant">restaurant</span>
-<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Lintage resturant</h1>
+{% endif %}
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">{{ restaurant.name|default:"Our Restaurant" }}</h1>
 </div>
 
 </header>

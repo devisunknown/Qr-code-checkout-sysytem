@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Lintage Modern Kitchen | Management Dashboard</title>
+<title>{{ restaurant.name }} | Management Dashboard</title>
 <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
@@ -151,13 +151,16 @@
 <!-- TopNavBar Implementation -->
 <header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop h-touch-target-min">
 <div class="flex items-center gap-4">
-<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Lintage Modern Kitchen</h1>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">{{ restaurant.name }}</h1>
 </div>
 <div class="hidden md:flex flex-1 max-w-xl mx-8">
-<div class="relative w-full">
+<form class="relative w-full" method="get" action="{% url 'dashboard' %}">
+<input type="hidden" name="range" value="{{ active_range }}"/>
+{% if active_range == 'custom' %}<input type="hidden" name="from" value="{{ range_from }}"/><input type="hidden" name="to" value="{{ range_to }}"/>{% endif %}
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all" placeholder="Search analytics, orders, or staff..." type="text"/>
-</div>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md focus:ring-2 focus:ring-primary focus:bg-surface-container-high transition-all" placeholder="Search analytics, orders, or staff..." name="q" value="{{ query }}" type="text"/>
+<button type="submit" class="sr-only">Search</button>
+</form>
 </div>
 <div class="flex items-center gap-base">
 <button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full cursor-pointer active:scale-95 duration-200" data-icon="notifications">notifications</button>
@@ -191,10 +194,13 @@
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchenlogin' %}">
+<form method="post" action="{% url 'kitchenlogout' %}">
+{% csrf_token %}
+<button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98">
 <span class="material-symbols-outlined">logout</span>
 <span class="font-label-sm text-label-sm">Logout</span>
-</a>
+</button>
+</form>
 </nav>
 </aside>
 
@@ -206,16 +212,23 @@
 <h1 class="font-headline-lg text-headline-lg text-on-surface">Dashboard Overview</h1>
 <p class="text-on-surface-variant font-body-md">Real-time performance and kitchen insights.</p>
 </div>
-<div class="flex items-center bg-surface-container-high rounded-xl p-1 gap-1">
-<button class="px-4 py-2 rounded-lg bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold transition-all">Today</button>
-<button class="px-4 py-2 rounded-lg text-label-sm text-secondary hover:bg-surface-container-low transition-all">Weekly</button>
-<button class="px-4 py-2 rounded-lg text-label-sm text-secondary hover:bg-surface-container-low transition-all">Monthly</button>
-<div class="h-6 w-[1px] bg-outline-variant mx-1"></div>
-<button class="flex items-center gap-2 px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-low transition-all">
+<form class="flex flex-col md:flex-row md:items-center md:gap-1 bg-surface-container-high rounded-xl p-1 gap-1 w-full md:w-auto" method="get" action="{% url 'dashboard' %}" id="rangeFilterForm">
+<input type="hidden" name="q" value="{{ query }}"/>
+<button type="submit" name="range" value="today" class="px-4 py-2 rounded-lg {% if active_range == 'today' %}bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold{% else %}text-label-sm text-secondary hover:bg-surface-container-low{% endif %} transition-all">Today</button>
+<button type="submit" name="range" value="weekly" class="px-4 py-2 rounded-lg {% if active_range == 'weekly' %}bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold{% else %}text-label-sm text-secondary hover:bg-surface-container-low{% endif %} transition-all">Weekly</button>
+<button type="submit" name="range" value="monthly" class="px-4 py-2 rounded-lg {% if active_range == 'monthly' %}bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold{% else %}text-label-sm text-secondary hover:bg-surface-container-low{% endif %} transition-all">Monthly</button>
+<div class="h-6 w-[1px] bg-outline-variant mx-1 hidden md:block"></div>
+<button type="button" id="customRangeToggle" class="flex items-center gap-2 px-3 py-2 rounded-lg {% if active_range == 'custom' %}bg-surface-container-lowest shadow-sm text-primary font-bold{% else %}text-secondary hover:bg-surface-container-low{% endif %} transition-all">
 <span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
 <span class="text-label-sm">Custom Range</span>
 </button>
+<div id="customRangePanel" class="{% if active_range == 'custom' %}flex{% else %}hidden{% endif %} items-center gap-2 mt-2 md:mt-0 md:ml-2 w-full md:w-auto">
+<input type="date" name="from" value="{{ range_from }}" aria-label="From date" class="rounded-lg px-2 py-1.5 text-label-sm border border-outline-variant bg-surface-container-lowest w-full md:w-auto"/>
+<span class="text-on-surface-variant text-sm">–</span>
+<input type="date" name="to" value="{{ range_to }}" aria-label="To date" class="rounded-lg px-2 py-1.5 text-label-sm border border-outline-variant bg-surface-container-lowest w-full md:w-auto"/>
+<button type="submit" name="range" value="custom" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-label-sm font-bold hover:bg-primary-container transition-all">Apply</button>
 </div>
+</form>
 </div>
 <!-- KPI Cards Section -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
@@ -261,7 +274,7 @@
 <!-- Weekly Trends Chart -->
 <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
 <div class="flex items-center justify-between mb-8">
-<h3 class="font-headline-md text-on-surface">Weekly Sales Performance</h3>
+<h3 class="font-headline-md text-on-surface">{{ chart_title }}</h3>
 </div>
 <div class="flex items-end justify-between h-64 gap-4 px-2">
 {% for day in weekly_sales %}
@@ -391,16 +404,11 @@ Order #{{ order.id }} placed
             });
         });
 
-        const dateButtons = document.querySelectorAll('.flex.items-center.bg-surface-container-high button');
-        dateButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                dateButtons.forEach(b => {
-                    b.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'text-primary', 'font-bold');
-                    b.classList.add('text-secondary');
-                });
-                this.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-primary', 'font-bold');
-                this.classList.remove('text-secondary');
-            });
+        const customToggle = document.getElementById('customRangeToggle');
+        const customPanel = document.getElementById('customRangePanel');
+        customToggle.addEventListener('click', () => {
+            customPanel.classList.toggle('hidden');
+            customPanel.classList.toggle('flex');
         });
     </script>
 </body></html>

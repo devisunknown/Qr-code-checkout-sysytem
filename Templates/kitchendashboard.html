@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Lintage Modern Kitchen - Kitchen Dashboard</title>
+<title>{{ restaurant.name }} - Kitchen Dashboard</title>
 <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -138,10 +138,13 @@
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchenlogin' %}">
+<form method="post" action="{% url 'kitchenlogout' %}">
+{% csrf_token %}
+<button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98">
 <span class="material-symbols-outlined">logout</span>
 <span class="font-label-sm text-label-sm">Logout</span>
-</a>
+</button>
+</form>
 </nav>
 </aside>
 
@@ -150,7 +153,7 @@
 
 <!-- Top Bar -->
 <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min border-b-2 border-outline-variant bg-surface sticky top-0 z-10">
-<div class="font-headline-md text-headline-md font-bold text-primary">Lintage Modern Kitchen</div>
+<div class="font-headline-md text-headline-md font-bold text-primary">{{ restaurant.name }}</div>
 <div class="flex items-center gap-4">
 <span class="font-label-sm text-label-sm text-on-surface-variant">Welcome, {{ request.user.username }}</span>
 <div class="ml-2 w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">

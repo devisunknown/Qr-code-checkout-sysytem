@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Lintage Resturant Order Status - Table{{table.name}}</title>
+<title>{{ table.restaurant.name }} Order Status - Table {{ table.number }}</title>
 <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -128,8 +128,15 @@
 <!-- Top App Bar -->
 <header class="docked full-width top-0 sticky z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-margin-mobile h-touch-target-min">
 <div class="flex items-center gap-3">
+{% if table.restaurant.logo %}
+<img src="{{ table.restaurant.logo.url }}" alt="{{ table.restaurant.name }}" class="w-10 h-10 rounded-full object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-primary" data-icon="restaurant">restaurant</span>
-<h1 class="text-headline-md font-headline-md text-primary">Table {{ table.number }}</h1>
+{% endif %}
+<div class="flex flex-col">
+<h1 class="text-headline-md font-headline-md text-primary">{{ table.restaurant.name }}</h1>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Table {{ table.number }}</span>
+</div>
 </div>
 <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors active:scale-95" id="theme-toggle">
 <span class="material-symbols-outlined text-primary" data-icon="brightness_6" id="theme-icon">brightness_6</span>
@@ -165,31 +172,31 @@
 <!-- Bottom Action Bar (Persistent Request Bill) -->
 <div class="fixed bottom-24 left-0 right-0 px-margin-mobile pointer-events-none z-40">
 <div class="max-w-2xl mx-auto pointer-events-auto">
-<button type="button" onclick="window.location.href='{% url 'request_bill' qr_token=table.qr_token %}'" class="w-full h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform font-headline-md text-headline-md">
+<button type="button" onclick="window.location.href='{% url 'request_bill' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}'" class="w-full h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform font-headline-md text-headline-md">
 <span class="material-symbols-outlined" data-icon="payments">payments</span>
-                Request bill
+                Review bill
             </button>
 </div>
 </div>
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0_-4px_20px_0_rgba(151,49,0,0.04)] bg-surface-container-lowest flex justify-around items-center px-2 py-3">
     <!-- Menu -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
         <span class="font-label-sm text-label-sm">Menu</span>
     </a>
     <!-- Orders (ACTIVE) -->
-    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'orderstatus' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'orderstatus' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
         <span class="font-label-sm text-label-sm">Orders</span>
     </a>
     <!-- Cart -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_cart' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_cart' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
         <span class="font-label-sm text-label-sm">Cart</span>
     </a>
     <!-- Help -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="help_outline" style="font-variation-settings: 'FILL' 1;">help_outline</span>
         <span class="font-label-sm text-label-sm">Help</span>
     </a>
@@ -233,19 +240,6 @@
             setTheme(newTheme);
         });
         
-        // Simple micro-interaction for the bill button
-        const billBtn = document.querySelector('button.bg-primary');
-        billBtn.addEventListener('click', () => {
-            const originalText = billBtn.innerHTML;
-            billBtn.innerHTML = `<span class="material-symbols-outlined animate-spin" data-icon="sync">sync</span> Sending Request...`;
-            billBtn.classList.replace('bg-primary', 'bg-tertiary');
-            
-            setTimeout(() => {
-                billBtn.innerHTML = `<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span> Waiter Notified`;
-                billBtn.classList.replace('bg-tertiary', 'bg-inverse-surface');
-            }, 1500);
-        });
-
         // Handle scroll behavior to hide/show bill button subtly
         let lastScroll = 0;
         window.addEventListener('scroll', () => {
@@ -265,7 +259,7 @@
 
         // --- Live order status polling (no more manual refreshing) ---
         (function () {
-            const refreshUrl = "{% url 'orderstatus_refresh' qr_token=table.qr_token %}";
+            const refreshUrl = "{% url 'orderstatus_refresh' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}";
             const NORMAL_INTERVAL_MS = 5000;
             const SLOW_INTERVAL_MS = 30000; // once every order is served, poll less often
 

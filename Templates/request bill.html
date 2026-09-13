@@ -3,7 +3,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Bill Requested - Lintage Resturant</title>
+<title>Bill Requested - {{ table.restaurant.name }}</title>
 <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
@@ -143,8 +143,12 @@
 <!-- Header Section (Static as per transactional rules - Navigation Suppressed) -->
 <header class="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-margin-mobile h-touch-target-min">
 <div class="flex items-center gap-2">
+{% if table.restaurant.logo %}
+<img src="{{ table.restaurant.logo.url }}" alt="{{ table.restaurant.name }}" class="w-8 h-8 rounded-full object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-primary font-headline-md">restaurant</span>
-<span class="font-headline-md text-headline-md font-bold text-primary">Lintage Resturant</span>
+{% endif %}
+<span class="font-headline-md text-headline-md font-bold text-primary">{{ table.restaurant.name }}</span>
 </div>
 <button class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-high text-on-surface-variant active:scale-90 transition-transform">
 <span class="material-symbols-outlined">close</span>
@@ -210,10 +214,18 @@ Your bill has been requested. Our staff will bring the bill to your table shortl
 {% endif %}
 <!-- Primary Action -->
 <div class="mt-6 flex flex-col gap-3">
-<a href="{% url 'table_menu' qr_token=table.qr_token %}" class="w-full bg-primary text-on-primary font-body-md font-bold py-4 rounded-xl min-h-[56px] shadow-md hover:bg-primary-container transition-all active:scale-95">
+{% if items %}
+<form method="post" action="{% url 'request_bill' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
+{% csrf_token %}
+<button type="submit" class="w-full bg-primary text-on-primary font-body-md font-bold py-4 rounded-xl min-h-[56px] shadow-md hover:bg-primary-container transition-all active:scale-95">
+Send request to staff
+</button>
+</form>
+{% endif %}
+<a href="{% url 'table_menu' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}" class="text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
 Continue Browsing
 </a>
-<a href="{% url 'orderstatus' qr_token=table.qr_token %}" class="text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
+<a href="{% url 'orderstatus' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}" class="text-on-surface-variant font-label-sm text-label-sm py-2 hover:text-primary transition-colors">
 View Orders
 </a>
 </div>
@@ -221,7 +233,7 @@ View Orders
 </main>
 <!-- Footer Identity -->
 <footer class="py-8 text-center text-on-surface-variant/40">
-<p class="font-label-sm text-label-sm">Akwaaba Feast • Traditional Hospitality, Digital Ease</p>
+<p class="font-label-sm text-label-sm">{{ table.restaurant.name }} • Traditional Hospitality, Digital Ease</p>
 </footer>
 <script>
         // Micro-interaction: Confetti trigger on load
@@ -232,22 +244,22 @@ View Orders
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0_-4px_20px_0_rgba(151,49,0,0.04)] bg-surface-container-lowest flex justify-around items-center px-2 py-3">
     <!-- Menu -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
         <span class="font-label-sm text-label-sm">Menu</span>
     </a>
     <!-- Orders -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'orderstatus' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'orderstatus' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
         <span class="font-label-sm text-label-sm">Orders</span>
     </a>
     <!-- Cart (ACTIVE) -->
-    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'table_cart' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'table_cart' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
         <span class="font-label-sm text-label-sm">Cart</span>
     </a>
     <!-- Help -->
-    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' qr_token=table.qr_token %}">
+    <a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
         <span class="material-symbols-outlined" data-icon="help_outline" style="font-variation-settings: 'FILL' 1;">help_outline</span>
         <span class="font-label-sm text-label-sm">Help</span>
     </a>

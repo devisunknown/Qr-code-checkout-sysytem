@@ -4,7 +4,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Lintage Resturant Table {{ table.number }} - Your Shared Cart</title>
+<title>{{ table.restaurant.name }} Table {{ table.number }} - Your Shared Cart</title>
 <link rel="icon" type="image/png" href="{% static 'images/nkoa.png' %}">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -121,18 +121,19 @@
   </head>
 <body class="bg-background text-on-background font-body-md min-h-screen pb-32">
 
-<!-- TopAppBar -->
-<header class="docked full-width top-0 sticky z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center w-full px-margin-mobile h-touch-target-min">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="restaurant">restaurant</span>
-<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">Lintage resturant Table {{ table.number }}</h1>
-</div>
-<button class="hover:bg-surface-variant dark:hover:bg-on-secondary-fixed-variant transition-colors p-2 rounded-full active:scale-95 transition-transform duration-200">
-<span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim" data-icon="account_circle">account_circle</span>
-</button>
-</header>
-
 <main class="px-margin-mobile pt-8 max-w-2xl mx-auto">
+
+<div class="flex items-center gap-3 mb-6">
+{% if table.restaurant.logo %}
+<img src="{{ table.restaurant.logo.url }}" alt="{{ table.restaurant.name }}" class="w-10 h-10 rounded-full object-cover"/>
+{% else %}
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="restaurant">restaurant</span>
+{% endif %}
+<div>
+<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">{{ table.restaurant.name }}</h1>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Table {{ table.number }}</span>
+</div>
+</div>
 
 <div class="flex items-center justify-between mb-6">
 <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Your Shared Cart</h2>
@@ -166,7 +167,7 @@
 <p class="text-label-sm font-label-sm text-primary mt-1">Note: {{ item.notes }}</p>
 {% endif %}
 </div>
-<form action="{% url 'cart_remove' qr_token=table.qr_token item_id=item.id %}" method="post">
+<form action="{% url 'cart_remove' restaurant_slug=table.restaurant.slug qr_token=table.qr_token item_id=item.id %}" method="post">
 {% csrf_token %}
 <button type="submit" class="text-error hover:bg-error-container p-2 rounded-full transition-colors active:scale-95">
 <span class="material-symbols-outlined" data-icon="delete">delete</span>
@@ -178,7 +179,7 @@
 <span class="text-price-display font-price-display text-primary">GH₵ {{ item.menu_item.price }}</span>
 <p class="text-label-sm font-label-sm text-secondary">Subtotal: GH₵ {{ item.line_total }}</p>
 </div>
-<form action="{% url 'cart_update' qr_token=table.qr_token item_id=item.id %}" method="post" class="flex items-center bg-surface-container-high rounded-full p-1">
+<form action="{% url 'cart_update' restaurant_slug=table.restaurant.slug qr_token=table.qr_token item_id=item.id %}" method="post" class="flex items-center bg-surface-container-high rounded-full p-1">
 {% csrf_token %}
 <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors active:scale-90">
 <span class="material-symbols-outlined" data-icon="remove">remove</span>
@@ -187,6 +188,12 @@
 <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors active:scale-90">
 <span class="material-symbols-outlined" data-icon="add">add</span>
 </button>
+</form>
+</div>
+<form action="{% url 'cart_update' restaurant_slug=table.restaurant.slug qr_token=table.qr_token item_id=item.id %}" method="post" class="mt-2 flex items-center gap-2">
+{% csrf_token %}
+<input type="text" name="notes" value="{{ item.notes }}" placeholder="Add a note (optional)" maxlength="255" class="flex-grow bg-surface-container-low rounded-full px-4 py-2 text-body-md focus:ring-2 focus:ring-primary transition-all" />
+<button type="submit" class="text-primary font-label-sm text-label-sm hover:underline whitespace-nowrap">Save note</button>
 </form>
 </div>
 </div>
@@ -209,14 +216,14 @@
 </div>
 
 <div class="mt-10 flex flex-col items-center gap-6">
-<form action="{% url 'cart_send' qr_token=table.qr_token %}" method="post" class="w-full">
+<form action="{% url 'cart_send' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}" method="post" class="w-full">
 {% csrf_token %}
 <button type="submit" class="w-full bg-terracotta-gradient text-white h-14 rounded-2xl font-bold text-body-lg shadow-lg active:scale-95 transition-transform duration-150 flex items-center justify-center gap-2">
 <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
                 Send to kitchen
             </button>
 </form>
-<a class="text-primary font-label-sm text-label-sm hover:underline flex items-center gap-1" href="{% url 'table_menu' qr_token=table.qr_token %}">
+<a class="text-primary font-label-sm text-label-sm hover:underline flex items-center gap-1" href="{% url 'table_menu' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
 <span class="material-symbols-outlined text-[18px]" data-icon="arrow_back">arrow_back</span>
                 Keep browsing
             </a>
@@ -243,22 +250,22 @@
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 w-full z-50 rounded-t-xl shadow-[0_-4px_20px_0_rgba(151,49,0,0.04)] bg-surface-container-lowest flex justify-around items-center px-2 py-3">
 <!-- Menu -->
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' qr_token=table.qr_token %}">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'table_menu' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
 <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
 <span class="font-label-sm text-label-sm">Menu</span>
 </a>
 <!-- Orders -->
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'orderstatus' qr_token=table.qr_token %}">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'orderstatus' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
 <span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
 <span class="font-label-sm text-label-sm">Orders</span>
 </a>
 <!-- Cart (ACTIVE) -->
-<a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'table_cart' qr_token=table.qr_token %}">
+<a class="flex flex-col items-center justify-center bg-primary-fixed text-on-primary-fixed rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="{% url 'table_cart' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
 <span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
 <span class="font-label-sm text-label-sm">Cart</span>
 </a>
 <!-- Help -->
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' qr_token=table.qr_token %}">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-variant active:scale-90 transition-all duration-200" href="{% url 'helpdesk' restaurant_slug=table.restaurant.slug qr_token=table.qr_token %}">
 <span class="material-symbols-outlined" data-icon="help_outline" style="font-variation-settings: 'FILL' 1;">help_outline</span>
 <span class="font-label-sm text-label-sm">Help</span>
 </a>

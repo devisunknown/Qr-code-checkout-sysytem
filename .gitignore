@@ -1,1 +1,31 @@
+# Environment
 .env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# Database (local only; production uses DATABASE_URL)
+db.sqlite3
+*.sqlite3
+
+# Static (collected)
+staticfiles/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Project junk / backups
+Templates_backup/
+*.backup
+*.backup2
+*.bak
+*.bak2
+resturant/fix_urls.py
+Templates/fix_*.py
+Templates/replace_section.py
