@@ -135,15 +135,15 @@
 </div>
 </div>
 <nav class="flex-1 px-4 space-y-2">
-<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg transition-transform active:scale-98" href="{% url 'kitchendashboard' %}">
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg transition-transform active:scale-98" href="{% url 'kitchendashboard' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">receipt_long</span>
 <span class="font-label-sm text-label-sm">Live Tickets</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'dashboard' %}">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'dashboard' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
-<form method="post" action="{% url 'kitchenlogout' %}">
+<form method="post" action="{% url 'kitchenlogout' restaurant_slug=restaurant.slug %}">
 {% csrf_token %}
 <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98">
 <span class="material-symbols-outlined">logout</span>
@@ -168,9 +168,9 @@
 {% if restaurants %}
 <form method="get" class="flex items-center gap-2">
 <label for="restaurant-switch" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Viewing</label>
-<select id="restaurant-switch" name="restaurant" onchange="this.form.submit()" class="rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-headline-md text-headline-md font-bold text-primary cursor-pointer">
+<select id="restaurant-switch" onchange="if (this.value) window.location.href = this.value;" class="rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-headline-md text-headline-md font-bold text-primary cursor-pointer">
 {% for r in restaurants %}
-<option value="{{ r.id }}" {% if selected_restaurant and r.id == selected_restaurant.id %}selected{% endif %}>{{ r.name }}</option>
+<option value="{% url 'kitchendashboard' restaurant_slug=r.slug %}" {% if selected_restaurant and r.id == selected_restaurant.id %}selected{% endif %}>{{ r.name }}</option>
 {% endfor %}
 </select>
 </form>
@@ -238,7 +238,7 @@
 <div class="flex justify-between items-center mb-4">
     <h3 class="font-headline-md text-headline-md">Table {{ table.grouper.number }}</h3>
     {% if table.grouper.id in tables_with_bill_request %}
-    <form action="{% url 'close_table_session' table_id=table.grouper.id %}" method="post">
+    <form action="{% url 'close_table_session' restaurant_slug=restaurant.slug table_id=table.grouper.id %}" method="post">
     {% csrf_token %}
     <button type="submit" class="flex items-center gap-1 px-3 py-1 bg-primary text-on-primary text-label-sm font-bold rounded-full animate-pulse">
         <span class="material-symbols-outlined text-sm">receipt_long</span> Bill Requested — Tap to Close
@@ -274,7 +274,7 @@
 </ul>
 <p class="text-on-surface-variant text-label-sm mb-2">Placed {{ order.placed_at|timesince }} ago</p>
 
-<form action="{% url 'advance_order_status' order_id=order.id %}" method="post" class="pt-2 border-t border-outline-variant">
+<form action="{% url 'advance_order_status' restaurant_slug=restaurant.slug order_id=order.id %}" method="post" class="pt-2 border-t border-outline-variant">
 {% csrf_token %}
 {% if order.status == 'pending' %}
 <button type="submit" name="status" value="preparing" class="w-full bg-primary text-on-primary font-bold py-1 rounded-xl">Start preparing</button>

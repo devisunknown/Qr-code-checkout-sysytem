@@ -8,55 +8,53 @@ from django.db import IntegrityError
 from .models import Restaurant, Table, TableSession
 
 
-DASHBOARD_RESTAURANT_SESSION_KEY = "dashboard_restaurant_id"
-
-
 def restaurant_required(view_func):
+    """Ensure the request targets a restaurant the user is allowed to manage.
+
+    Canonical staff routes carry ``restaurant_slug`` in the URL. Staff/owner/
+    kitchen accounts may only open their own restaurant; superusers may open any.
+    """
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
+        slug = kwargs.get("restaurant_slug")
         if not request.user.is_authenticated:
-            return redirect("kitchenlogin")
-        if request.user.is_superuser:
-            return view_func(request, *args, **kwargs)
-        if request.user.restaurant is None:
-            messages.error(
-                request,
-                "Your account isn't linked to a restaurant. Please contact the system administrator.",
-            )
-            return redirect("kitchenlogin")
+            if slug:
+                return redirect("kitchenlogin", restaurant_slug=slug)
+            return redirect("legacy_kitchen_login")
+
+        user = request.user
+        if not user.is_superuser:
+            if user.restaurant is None:
+                messages.error(
+                    request,
+                    "Your account isn't linked to a restaurant. Please contact the system administrator.",
+                )
+                if slug:
+                    return redirect("kitchenlogin", restaurant_slug=slug)
+                return redirect("legacy_kitchen_login")
+            if slug and slug != user.restaurant.slug:
+                messages.error(request, "You don't have access to that restaurant.")
+                return redirect(
+                    "kitchendashboard", restaurant_slug=user.restaurant.slug
+                )
         return view_func(request, *args, **kwargs)
 
     return _wrapped
 
 
-def get_dashboard_restaurant(request):
+def get_dashboard_restaurant(request, restaurant_slug=None):
     """Resolve which restaurant's data a staff dashboard request targets.
 
-    Staff/owner/kitchen accounts are always bound to their own restaurant.
-    Superusers may view any active restaurant: the choice comes from
-    ``?restaurant=<id>`` (persisted in the session) and falls back to the
-    first active restaurant. Returns ``None`` when no active restaurant exists.
+    On the canonical slug-scoped routes ``restaurant_slug`` is authoritative and
+    an unknown or inactive slug raises 404. When omitted, staff fall back to
+    their own restaurant and superusers to the first active restaurant.
     """
-    user = request.user
+    if restaurant_slug:
+        return get_object_or_404(Restaurant, slug=restaurant_slug, is_active=True)
 
+    user = request.user
     if not user.is_superuser:
         return user.restaurant
-
-    requested = request.GET.get("restaurant")
-    if requested and str(requested).isdigit():
-        restaurant = Restaurant.objects.filter(
-            id=int(requested), is_active=True
-        ).first()
-        if restaurant is not None:
-            request.session[DASHBOARD_RESTAURANT_SESSION_KEY] = restaurant.id
-            return restaurant
-
-    stored = request.session.get(DASHBOARD_RESTAURANT_SESSION_KEY)
-    if stored:
-        restaurant = Restaurant.objects.filter(id=stored, is_active=True).first()
-        if restaurant is not None:
-            return restaurant
-
     return Restaurant.objects.filter(is_active=True).first()
 
 

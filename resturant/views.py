@@ -197,8 +197,19 @@ def cart_send(request, restaurant_slug, qr_token):
     return redirect("table_cart", restaurant_slug=restaurant_slug, qr_token=qr_token)
 
 
+def _legacy_restaurant_slug(request):
+    """Best-effort restaurant slug for the legacy (non slug-scoped) staff URLs."""
+    user = request.user
+    if user.is_authenticated and not user.is_superuser and user.restaurant_id:
+        return user.restaurant.slug
+    restaurant = Restaurant.objects.filter(is_active=True).first()
+    return restaurant.slug if restaurant else None
+
+
 @ratelimit(key='user_or_ip', rate='5/m', method='POST', block=True)
-def kitchenlogin(request):
+def kitchenlogin(request, restaurant_slug):
+    restaurant = get_object_or_404(Restaurant, slug=restaurant_slug, is_active=True)
+    request.restaurant = restaurant
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -207,25 +218,62 @@ def kitchenlogin(request):
             login(request, user)
             request.session.set_expiry(12390)
             messages.success(request, 'user is authenticated')
-            return redirect('kitchendashboard')
+            if not user.is_superuser and user.restaurant_id:
+                target_slug = user.restaurant.slug
+            else:
+                target_slug = restaurant.slug
+            return redirect('kitchendashboard', restaurant_slug=target_slug)
         else:
             messages.error(request, 'user not authenticated')
-            return redirect('kitchenlogin')
+            return redirect('kitchenlogin', restaurant_slug=restaurant_slug)
 
-    return render(request, 'kitchenlogin.html')
+    return render(request, 'kitchenlogin.html', {"restaurant": restaurant})
 
 
 @require_POST
-def kitchenlogout(request):
+def kitchenlogout(request, restaurant_slug=None):
+    slug = _legacy_restaurant_slug(request)
     logout(request)
     messages.success(request, 'You have been logged out.')
-    return redirect('kitchenlogin')
+    if slug:
+        return redirect('kitchenlogin', restaurant_slug=slug)
+    return redirect('legacy_kitchen_login')
+
+
+def legacy_kitchen_login(request):
+    """Send legacy /kitchen/login/ visitors to their restaurant's login page."""
+    slug = _legacy_restaurant_slug(request)
+    if slug:
+        return redirect('kitchenlogin', restaurant_slug=slug)
+    return render(request, 'kitchenlogin.html', {"restaurant": None})
+
+
+def _make_legacy_redirect(route_name):
+    """Build a view that redirects a legacy staff URL to its slug-scoped route."""
+    def _view(request, *args, **kwargs):
+        slug = _legacy_restaurant_slug(request)
+        if slug:
+            kwargs['restaurant_slug'] = slug
+            return redirect(route_name, **kwargs)
+        return redirect('legacy_kitchen_login')
+
+    _view.__name__ = f"legacy_{route_name}"
+    return _view
+
+
+legacy_kitchen_dashboard = _make_legacy_redirect('kitchendashboard')
+legacy_kitchen_display = _make_legacy_redirect('kitchendisplay')
+legacy_kitchen_displaywidget = _make_legacy_redirect('kitchendisplaywidget')
+legacy_advance_order_status = _make_legacy_redirect('advance_order_status')
+legacy_mark_table_orders_ready = _make_legacy_redirect('mark_table_orders_ready')
+legacy_management_dashboard = _make_legacy_redirect('dashboard')
+legacy_close_table_session = _make_legacy_redirect('close_table_session')
 
 
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
-def dashboard(request):
-    restaurant = get_dashboard_restaurant(request)
+def dashboard(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     orders = (Order.objects
                   .filter(
                       table_session__status__in=["ordering", "awaiting_payment"],
@@ -260,18 +308,18 @@ VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
 @ratelimit(key='user_or_ip', rate='60/m', method='POST', block=False)
 @restaurant_required
 @require_POST
-def advance_order_status(request, order_id):
+def advance_order_status(request, order_id, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     if getattr(request, 'limited', False):
         messages.error(request, "You're updating tickets too quickly — please wait a moment and try again.")
-        return redirect("kitchendashboard")
+        return redirect("kitchendashboard", restaurant_slug=restaurant.slug)
 
-    restaurant = get_dashboard_restaurant(request)
     order = get_object_or_404(Order, id=order_id, table_session__restaurant=restaurant)
     new_status = request.POST.get("status")
 
     if new_status not in VALID_ORDER_STATUSES:
         messages.error(request, "Invalid status update.")
-        return redirect("kitchendashboard")
+        return redirect("kitchendashboard", restaurant_slug=restaurant.slug)
 
     order.status = new_status
     if new_status == "preparing":
@@ -279,12 +327,12 @@ def advance_order_status(request, order_id):
     order.save()
 
     messages.success(request, f"Order #{order.id} marked as {order.get_status_display()}.")
-    return redirect("kitchendashboard")
+    return redirect("kitchendashboard", restaurant_slug=restaurant.slug)
 
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
-def kitchendisplay(request):
-    restaurant = get_dashboard_restaurant(request)
+def kitchendisplay(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     orders = (Order.objects
               .filter(
                   table_session__restaurant=restaurant
@@ -304,8 +352,8 @@ def kitchendisplay(request):
 @ratelimit(key='user_or_ip', rate='60/m', method='POST', block=True)
 @restaurant_required
 @require_POST
-def mark_table_orders_ready(request, table_id):
-    restaurant = get_dashboard_restaurant(request)
+def mark_table_orders_ready(request, table_id, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     try:
         table = get_object_or_404(Table, id=table_id, restaurant=restaurant)
 
@@ -329,13 +377,13 @@ def mark_table_orders_ready(request, table_id):
             messages.info(request, 'No preparing orders found for this table.')
     except Exception as e:
         messages.error(request, f'An error occurred while marking orders as ready: {str(e)}')
-    return redirect('kitchendashboard')
+    return redirect('kitchendashboard', restaurant_slug=restaurant.slug)
 
 
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
-def kitchendisplaywidget(request):
-    restaurant = get_dashboard_restaurant(request)
+def kitchendisplaywidget(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     orders = (Order.objects
               .filter(
                   table_session__restaurant=restaurant
@@ -357,17 +405,17 @@ def helpdesk(request, restaurant_slug, qr_token):
 
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
-def management_dashboard(request):
+def management_dashboard(request, restaurant_slug):
     from datetime import timedelta, datetime as dt_cls, time as time_cls, date as date_cls
     from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, fields
     from django.db.models.functions import TruncDate, TruncHour
     from django.utils import timezone
 
-    restaurant = get_dashboard_restaurant(request)
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
 
     if request.user.role == "kitchen":
         messages.error(request, "Kitchen staff don't have access to the analytics dashboard.")
-        return redirect("kitchendashboard")
+        return redirect("kitchendashboard", restaurant_slug=restaurant.slug)
 
     today = timezone.now().date()
 
@@ -551,8 +599,8 @@ from django.db.models import F, Sum
 @ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
 @restaurant_required
 @require_POST
-def close_table_session(request, table_id):
-    restaurant = get_dashboard_restaurant(request)
+def close_table_session(request, table_id, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
     table = get_object_or_404(Table, id=table_id, restaurant=restaurant)
     session = TableSession.objects.filter(
         table=table, status__in=["ordering", "awaiting_payment"]
@@ -577,4 +625,4 @@ def close_table_session(request, table_id):
             session.closed_at = timezone.now()
             session.save(update_fields=["status", "is_active", "closed_at"])
         messages.success(request, f"Table {table.number} closed and ready for the next guests.")
-    return redirect("kitchendashboard")
+    return redirect("kitchendashboard", restaurant_slug=restaurant.slug)

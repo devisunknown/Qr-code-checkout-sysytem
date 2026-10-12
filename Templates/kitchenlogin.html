@@ -141,7 +141,7 @@
             </div>
 
             <div class="w-full bg-surface-container-lowest p-8 md:p-10 rounded-2xl login-card-shadow border border-outline-variant/30">
-                <form action="{% url 'kitchenlogin' %}" method="POST" id="loginForm" class="space-y-6">
+                <form action="{% if restaurant %}{% url 'kitchenlogin' restaurant_slug=restaurant.slug %}{% else %}{% url 'legacy_kitchen_login' %}{% endif %}" method="POST" id="loginForm" class="space-y-6">
                     {% csrf_token %}
                     <div class="space-y-2">
                         <label class="block font-label-sm text-label-sm text-on-surface" for="username">Staff username</label>

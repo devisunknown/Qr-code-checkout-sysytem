@@ -95,6 +95,8 @@ class BaseTestCase(TestCase):
         self.client = Client()
         self.prefix = f"/{self.restaurant.slug}/{self.table.qr_token}"
         self.other_prefix = f"/{self.other_restaurant.slug}/{self.other_table.qr_token}"
+        self.staff_prefix = f"/{self.restaurant.slug}/kitchen"
+        self.admin_prefix = f"/{self.restaurant.slug}"
 
 
 class TestMenuScoping(BaseTestCase):
@@ -326,12 +328,12 @@ class TestRequirePostGuards(BaseTestCase):
             status="pending",
         )
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get(f"/kitchen/order/{order.id}/status/")
+        resp = self.client.get(f"{self.staff_prefix}/order/{order.id}/status/")
         self.assertEqual(resp.status_code, 405)
 
     def test_mark_table_orders_ready_requires_post(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get(f"/kitchen/table/{self.table.id}/mark-ready/")
+        resp = self.client.get(f"{self.staff_prefix}/table/{self.table.id}/mark-ready/")
         self.assertEqual(resp.status_code, 405)
 
     def test_mark_ready_keeps_order_and_hides_from_live_board(self):
@@ -342,7 +344,7 @@ class TestRequirePostGuards(BaseTestCase):
         self.client.login(username="kitchen", password="testpass123")
 
         resp = self.client.post(
-            f"/kitchen/table/{self.table.id}/mark-ready/", follow=True
+            f"{self.staff_prefix}/table/{self.table.id}/mark-ready/", follow=True
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -350,35 +352,39 @@ class TestRequirePostGuards(BaseTestCase):
         self.assertEqual(order.status, "ready")
         self.assertTrue(Order.objects.filter(pk=order.pk).exists())
 
-        board = self.client.get("/kitchen/dashboard/")
+        board = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertEqual(board.status_code, 200)
         self.assertEqual(board.context["live_ticket_count"], 0)
         self.assertEqual(board.context["orders"].count(), 0)
 
     def test_close_table_requires_post(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get(f"/table/{self.table.id}/close/")
+        resp = self.client.get(f"{self.admin_prefix}/table/{self.table.id}/close/")
         self.assertEqual(resp.status_code, 405)
 
 
 class TestKitchenAuthz(BaseTestCase):
     def test_unauthenticated_dashboard_redirects(self):
-        resp = self.client.get("/kitchen/dashboard/")
-        self.assertRedirects(resp, "/kitchen/login/", fetch_redirect_response=False)
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/login/", fetch_redirect_response=False
+        )
 
     def test_kitchen_user_cannot_access_analytics(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/dashboard/")
-        self.assertRedirects(resp, "/kitchen/dashboard/", fetch_redirect_response=False)
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/dashboard/", fetch_redirect_response=False
+        )
 
     def test_owner_can_access_analytics(self):
         self.client.login(username="owner", password="testpass123")
-        resp = self.client.get("/dashboard/")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
 
     def test_kitchen_can_access_kitchen_dashboard(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/kitchen/dashboard/")
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
 
     def test_advance_order_status_scoped_to_restaurant(self):
@@ -390,12 +396,55 @@ class TestKitchenAuthz(BaseTestCase):
         )
         self.client.login(username="kitchen", password="testpass123")
         resp = self.client.post(
-            f"/kitchen/order/{other_order.id}/status/",
+            f"{self.staff_prefix}/order/{other_order.id}/status/",
             {"status": "preparing"},
         )
         self.assertEqual(resp.status_code, 404)
         other_order.refresh_from_db()
         self.assertEqual(other_order.status, "pending")
+
+    def test_staff_cannot_open_another_restaurants_dashboard(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get(
+            f"/{self.other_restaurant.slug}/kitchen/dashboard/"
+        )
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/dashboard/", fetch_redirect_response=False
+        )
+
+    def test_unknown_slug_redirects_staff_to_own_dashboard(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/nobody/kitchen/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/dashboard/", fetch_redirect_response=False
+        )
+
+    def test_unknown_slug_login_is_404(self):
+        resp = self.client.get("/nobody/kitchen/login/")
+        self.assertEqual(resp.status_code, 404)
+
+
+
+class TestLegacyStaffRedirects(BaseTestCase):
+    def test_legacy_login_redirects_to_slug_login(self):
+        resp = self.client.get("/kitchen/login/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/login/", fetch_redirect_response=False
+        )
+
+    def test_legacy_dashboard_redirects_to_slug_dashboard(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/dashboard/", fetch_redirect_response=False
+        )
+
+    def test_legacy_management_dashboard_redirects(self):
+        self.client.login(username="owner", password="testpass123")
+        resp = self.client.get("/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.admin_prefix}/dashboard/", fetch_redirect_response=False
+        )
 
 
 class TestOrderStatusTransition(BaseTestCase):
@@ -407,7 +456,7 @@ class TestOrderStatusTransition(BaseTestCase):
         self.client.login(username="kitchen", password="testpass123")
 
         resp = self.client.post(
-            f"/kitchen/order/{order.id}/status/",
+            f"{self.staff_prefix}/order/{order.id}/status/",
             {"status": "preparing"},
             follow=True,
         )
@@ -417,7 +466,7 @@ class TestOrderStatusTransition(BaseTestCase):
         self.assertIsNotNone(order.started_preparing_at)
 
         resp = self.client.post(
-            f"/kitchen/order/{order.id}/status/",
+            f"{self.staff_prefix}/order/{order.id}/status/",
             {"status": "ready"},
             follow=True,
         )
@@ -425,7 +474,7 @@ class TestOrderStatusTransition(BaseTestCase):
         self.assertEqual(order.status, "ready")
 
         resp = self.client.post(
-            f"/kitchen/order/{order.id}/status/",
+            f"{self.staff_prefix}/order/{order.id}/status/",
             {"status": "served"},
             follow=True,
         )
@@ -460,7 +509,7 @@ class TestCloseTableCreatesBill(BaseTestCase):
             order=order, menu_item=self.fries, quantity=2, price_at_order=self.fries.price
         )
 
-        resp = self.client.post(f"/table/{self.table.id}/close/", follow=True)
+        resp = self.client.post(f"{self.admin_prefix}/table/{self.table.id}/close/", follow=True)
         self.assertEqual(resp.status_code, 200)
 
         session.refresh_from_db()
@@ -489,11 +538,11 @@ class TestCloseTableCreatesBill(BaseTestCase):
             order=order, menu_item=self.burger, quantity=1, price_at_order=self.burger.price
         )
 
-        self.client.post(f"/kitchen/table/{self.table.id}/mark-ready/")
+        self.client.post(f"{self.staff_prefix}/table/{self.table.id}/mark-ready/")
         order.refresh_from_db()
         self.assertEqual(order.status, "ready")
 
-        self.client.post(f"/table/{self.table.id}/close/")
+        self.client.post(f"{self.admin_prefix}/table/{self.table.id}/close/")
 
         bill = Bill.objects.get(table_session=session)
         self.assertTrue(bill.is_paid)
@@ -506,24 +555,34 @@ class TestCloseTableCreatesBill(BaseTestCase):
         )
         Order.objects.create(table_session=session, status="served")
 
-        self.client.post(f"/table/{self.table.id}/close/")
+        self.client.post(f"{self.admin_prefix}/table/{self.table.id}/close/")
         session.refresh_from_db()
         self.assertEqual(session.status, "closed")
 
         # second close on already-closed session (no active session found)
-        resp = self.client.post(f"/table/{self.table.id}/close/")
+        resp = self.client.post(f"{self.admin_prefix}/table/{self.table.id}/close/")
         self.assertEqual(resp.status_code, 302)
 
 
 class TestLogout(BaseTestCase):
     def test_logout_logs_out(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.post("/kitchen/logout/", follow=True)
-        self.assertRedirects(resp, "/kitchen/login/", fetch_redirect_response=False)
+        resp = self.client.post(f"{self.staff_prefix}/logout/", follow=True)
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/login/", fetch_redirect_response=False
+        )
 
     def test_logout_requires_post(self):
-        resp = self.client.get("/kitchen/logout/")
+        resp = self.client.get(f"{self.staff_prefix}/logout/")
         self.assertEqual(resp.status_code, 405)
+
+    def test_legacy_logout_still_works(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.post("/kitchen/logout/", follow=True)
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/login/", fetch_redirect_response=False
+        )
+
 
 
 class TestManagementDashboardFilters(BaseTestCase):
@@ -551,7 +610,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         self._place(days_ago=0)
         self._place(days_ago=10, menu_item=self.burger)
         self._login_owner()
-        resp = self.client.get("/dashboard/")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context["total_orders"], 1)
         self.assertEqual(resp.context["total_revenue"], self.fries.price)
@@ -563,19 +622,19 @@ class TestManagementDashboardFilters(BaseTestCase):
         self._place(days_ago=1, menu_item=self.burger)
         self._login_owner()
 
-        resp = self.client.get("/dashboard/?range=today")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/?range=today")
         self.assertEqual(resp.context["total_orders"], 1)
         self.assertEqual(resp.context["total_revenue"], self.fries.price)
         # hourly buckets for the current day
         self.assertEqual(len(resp.context["weekly_sales"]), 24)
 
-        resp = self.client.get("/dashboard/?range=weekly")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/?range=weekly")
         self.assertEqual(resp.context["total_orders"], 2)
 
     def test_monthly_range_series_length(self):
         self._place(days_ago=0)
         self._login_owner()
-        resp = self.client.get("/dashboard/?range=monthly")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/?range=monthly")
         self.assertEqual(len(resp.context["weekly_sales"]), 30)
 
     def test_custom_range(self):
@@ -585,7 +644,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         start = (timezone.now() - timedelta(days=10)).date()
         end = timezone.now().date()
         resp = self.client.get(
-            f"/dashboard/?range=custom&from={start.isoformat()}&to={end.isoformat()}"
+            f"{self.admin_prefix}/dashboard/?range=custom&from={start.isoformat()}&to={end.isoformat()}"
         )
         self.assertEqual(resp.context["active_range"], "custom")
         self.assertEqual(resp.context["total_orders"], 1)
@@ -595,7 +654,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         self._place(days_ago=0)
         self._place(days_ago=20, menu_item=self.burger)
         self._login_owner()
-        resp = self.client.get("/dashboard/?range=banana")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/?range=banana")
         self.assertEqual(resp.context["active_range"], "weekly")
         self.assertEqual(resp.context["total_orders"], 1)
 
@@ -605,7 +664,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         start = timezone.now().date()
         end = (timezone.now() - timedelta(days=10)).date()
         resp = self.client.get(
-            f"/dashboard/?range=custom&from={start.isoformat()}&to={end.isoformat()}"
+            f"{self.admin_prefix}/dashboard/?range=custom&from={start.isoformat()}&to={end.isoformat()}"
         )
         self.assertEqual(resp.context["active_range"], "weekly")
 
@@ -614,7 +673,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         self._place(days_ago=0, menu_item=self.burger)
         self._login_owner()
 
-        resp = self.client.get("/dashboard/?q=fries")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/?q=fries")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context["query"], "fries")
         sellers = list(
@@ -628,7 +687,7 @@ class TestManagementDashboardFilters(BaseTestCase):
         self._place(days_ago=0)
         self._place(days_ago=0, menu_item=self.burger)
         self._login_owner()
-        resp = self.client.get("/dashboard/")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/")
         self.assertEqual(resp.context["query"], "")
         sellers = list(
             resp.context["best_sellers"].values_list("menu_item__name", flat=True)
@@ -654,7 +713,7 @@ class TestRestaurantScopedDashboard(BaseTestCase):
         other = self._other_session_order()
         self.client.login(username="kitchen", password="testpass123")
 
-        resp = self.client.get("/kitchen/dashboard/")
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context["restaurant"], self.restaurant)
         ids = set(resp.context["orders"].values_list("id", flat=True))
@@ -665,7 +724,7 @@ class TestRestaurantScopedDashboard(BaseTestCase):
         other = self._other_session_order()
         self.client.login(username="kitchen", password="testpass123")
         resp = self.client.post(
-            f"/kitchen/order/{other.id}/status/", {"status": "preparing"}
+            f"{self.staff_prefix}/order/{other.id}/status/", {"status": "preparing"}
         )
         self.assertEqual(resp.status_code, 404)
         other.refresh_from_db()
@@ -677,14 +736,16 @@ class TestRestaurantScopedDashboard(BaseTestCase):
         )
         Order.objects.create(table_session=session, status="served")
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.post(f"/table/{self.other_table.id}/close/")
+        resp = self.client.post(
+            f"{self.admin_prefix}/table/{self.other_table.id}/close/"
+        )
         self.assertEqual(resp.status_code, 404)
         session.refresh_from_db()
         self.assertEqual(session.status, "ordering")
 
     def test_staff_board_has_no_restaurant_switcher(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/kitchen/dashboard/")
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertIsNone(resp.context["restaurants"])
         self.assertNotContains(resp, 'id="restaurant-switch"')
 
@@ -714,15 +775,24 @@ class TestSuperuserRestaurantSwitcher(BaseTestCase):
     def test_superuser_can_open_dashboard_without_own_restaurant(self):
         self.assertIsNone(self.superuser.restaurant)
         self.client.login(username="root", password="rootpass123")
-        resp = self.client.get("/kitchen/dashboard/")
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
+
+    def test_superuser_can_open_any_restaurants_dashboard(self):
+        self.client.login(username="root", password="rootpass123")
+        resp = self.client.get(f"/{self.other_restaurant.slug}/kitchen/dashboard/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["restaurant"], self.other_restaurant)
+
+    def test_superuser_unknown_slug_is_404(self):
+        self.client.login(username="root", password="rootpass123")
+        resp = self.client.get("/nobody/kitchen/dashboard/")
+        self.assertEqual(resp.status_code, 404)
 
     def test_superuser_switches_to_chosen_restaurant(self):
         self._other_order()
         self.client.login(username="root", password="rootpass123")
-        resp = self.client.get(
-            f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}"
-        )
+        resp = self.client.get(f"/{self.other_restaurant.slug}/kitchen/dashboard/")
         self.assertEqual(resp.context["restaurant"], self.other_restaurant)
         self.assertContains(resp, 'id="restaurant-switch"')
         self.assertContains(resp, self.other_restaurant.name)
@@ -731,20 +801,17 @@ class TestSuperuserRestaurantSwitcher(BaseTestCase):
         own = self._own_order()
         other = self._other_order()
         self.client.login(username="root", password="rootpass123")
-        resp = self.client.get(
-            f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}"
-        )
+        resp = self.client.get(f"/{self.other_restaurant.slug}/kitchen/dashboard/")
         ids = set(resp.context["orders"].values_list("id", flat=True))
         self.assertIn(other.id, ids)
         self.assertNotIn(own.id, ids)
 
-    def test_superuser_actions_use_the_selected_restaurant(self):
+    def test_superuser_actions_use_the_url_restaurant(self):
         other = self._other_order()
         self.client.login(username="root", password="rootpass123")
-        # Selecting the restaurant persists it in the session for later POSTs.
-        self.client.get(f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}")
         resp = self.client.post(
-            f"/kitchen/order/{other.id}/status/", {"status": "preparing"}
+            f"/{self.other_restaurant.slug}/kitchen/order/{other.id}/status/",
+            {"status": "preparing"},
         )
         self.assertEqual(resp.status_code, 302)
         other.refresh_from_db()
@@ -755,8 +822,10 @@ class TestRestaurantRequiredAndUserValidation(BaseTestCase):
     def test_staff_without_restaurant_is_redirected_to_login(self):
         User.objects.create_user(username="floating", password="testpass123")
         self.client.login(username="floating", password="testpass123")
-        resp = self.client.get("/kitchen/dashboard/")
-        self.assertRedirects(resp, "/kitchen/login/", fetch_redirect_response=False)
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
+        self.assertRedirects(
+            resp, f"{self.staff_prefix}/login/", fetch_redirect_response=False
+        )
 
     def test_staff_without_restaurant_fails_model_validation(self):
         from django.core.exceptions import ValidationError
@@ -772,43 +841,46 @@ class TestRestaurantRequiredAndUserValidation(BaseTestCase):
 
 
 class TestSuperuserWithoutRestaurants(TestCase):
-    def test_dashboard_renders_empty_board(self):
+    def test_legacy_dashboard_redirects_to_login_when_no_restaurants(self):
         User.objects.create_superuser(
             username="solo", email="solo@example.com", password="solopass123"
         )
         self.client.login(username="solo", password="solopass123")
         resp = self.client.get("/kitchen/dashboard/")
+        self.assertRedirects(resp, "/kitchen/login/", fetch_redirect_response=False)
+
+    def test_legacy_login_renders_when_no_restaurants(self):
+        resp = self.client.get("/kitchen/login/")
         self.assertEqual(resp.status_code, 200)
         self.assertIsNone(resp.context["restaurant"])
-        self.assertEqual(resp.context["orders"].count(), 0)
 
 
 class TestDashboardBranding(BaseTestCase):
     def test_login_page_shows_restaurant_name(self):
-        resp = self.client.get("/kitchen/login/")
+        resp = self.client.get(f"{self.staff_prefix}/login/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.restaurant.name)
 
     def test_kitchen_dashboard_shows_restaurant_name(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/kitchen/dashboard/")
+        resp = self.client.get(f"{self.staff_prefix}/dashboard/")
         self.assertContains(resp, self.restaurant.name)
 
     def test_management_dashboard_shows_restaurant_name(self):
         self.client.login(username="owner", password="testpass123")
-        resp = self.client.get("/dashboard/")
+        resp = self.client.get(f"{self.admin_prefix}/dashboard/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.restaurant.name)
 
     def test_kitchen_display_shows_restaurant_name(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/kitchen/display/")
+        resp = self.client.get(f"{self.staff_prefix}/display/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.restaurant.name)
 
     def test_kitchen_display_widget_shows_restaurant_name(self):
         self.client.login(username="kitchen", password="testpass123")
-        resp = self.client.get("/kitchen/displaywidget/")
+        resp = self.client.get(f"{self.staff_prefix}/displaywidget/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.restaurant.name)
 

@@ -162,7 +162,7 @@
 <h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">{{ restaurant.name }}</h1>
 </div>
 <div class="hidden md:flex flex-1 max-w-xl mx-8">
-<form class="relative w-full" method="get" action="{% url 'dashboard' %}">
+<form class="relative w-full" method="get" action="{% url 'dashboard' restaurant_slug=restaurant.slug %}">
 <input type="hidden" name="range" value="{{ active_range }}"/>
 {% if active_range == 'custom' %}<input type="hidden" name="from" value="{{ range_from }}"/><input type="hidden" name="to" value="{{ range_to }}"/>{% endif %}
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
@@ -198,15 +198,15 @@
 </div>
 </div>
 <nav class="flex-1 px-4 space-y-2">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchendashboard' %}">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'kitchendashboard' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">receipt_long</span>
 <span class="font-label-sm text-label-sm">Live Tickets</span>
 </a>
-<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg transition-transform active:scale-98" href="{% url 'dashboard' %}">
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg transition-transform active:scale-98" href="{% url 'dashboard' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
-<form method="post" action="{% url 'kitchenlogout' %}">
+<form method="post" action="{% url 'kitchenlogout' restaurant_slug=restaurant.slug %}">
 {% csrf_token %}
 <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98">
 <span class="material-symbols-outlined">logout</span>
@@ -224,7 +224,7 @@
 <h1 class="font-headline-lg text-headline-lg text-on-surface">Dashboard Overview</h1>
 <p class="text-on-surface-variant font-body-md">Real-time performance and kitchen insights.</p>
 </div>
-<form class="flex flex-col md:flex-row md:items-center md:gap-1 bg-surface-container-high rounded-xl p-1 gap-1 w-full md:w-auto" method="get" action="{% url 'dashboard' %}" id="rangeFilterForm">
+<form class="flex flex-col md:flex-row md:items-center md:gap-1 bg-surface-container-high rounded-xl p-1 gap-1 w-full md:w-auto" method="get" action="{% url 'dashboard' restaurant_slug=restaurant.slug %}" id="rangeFilterForm">
 <input type="hidden" name="q" value="{{ query }}"/>
 <button type="submit" name="range" value="today" class="px-4 py-2 rounded-lg {% if active_range == 'today' %}bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold{% else %}text-label-sm text-secondary hover:bg-surface-container-low{% endif %} transition-all">Today</button>
 <button type="submit" name="range" value="weekly" class="px-4 py-2 rounded-lg {% if active_range == 'weekly' %}bg-surface-container-lowest shadow-sm text-label-sm text-primary font-bold{% else %}text-label-sm text-secondary hover:bg-surface-container-low{% endif %} transition-all">Weekly</button>
@@ -334,7 +334,7 @@
 <p class="text-on-surface-variant text-sm">Real-time order tracking and capacity.</p>
 </div>
 </div>
-<a href="{% url 'kitchendashboard' %}" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 min-h-touch-target-min inline-flex items-center justify-center">
+<a href="{% url 'kitchendashboard' restaurant_slug=restaurant.slug %}" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95 min-h-touch-target-min inline-flex items-center justify-center">
                     Manage Kitchen Queue
                 </a>
 </div>
