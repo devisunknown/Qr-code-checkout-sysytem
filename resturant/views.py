@@ -18,10 +18,11 @@ from .models import (
     MenuItem,
     Order,
     OrderItem,
+    Restaurant,
     Table,
     TableSession,
 )
-from .utils import get_active_session, restaurant_required
+from .utils import get_active_session, get_dashboard_restaurant, restaurant_required
 
 
 @ratelimit(key='user_or_ip', rate='5/m', method='POST', block=True)
@@ -224,7 +225,7 @@ def kitchenlogout(request):
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
 def dashboard(request):
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     orders = (Order.objects
                   .filter(
                       table_session__status__in=["ordering", "awaiting_payment"],
@@ -239,12 +240,19 @@ def dashboard(request):
     tables_with_bill_request = set(
         orders.filter(bill_requested=True).values_list('table_session__table_id', flat=True)
     )
+    restaurants = None
+    if request.user.is_superuser:
+        restaurants = Restaurant.objects.filter(is_active=True).order_by("name")
+        if restaurant is None:
+            messages.info(request, "No active restaurants yet. Add one in the admin to get started.")
     return render(request, 'kitchendashboard.html', {
         "orders": orders,
         "live_ticket_count": live_ticket_count,
         "tables_active": tables_active,
         "tables_with_bill_request": tables_with_bill_request,
         "restaurant": restaurant,
+        "restaurants": restaurants,
+        "selected_restaurant": restaurant,
     })
 
 VALID_ORDER_STATUSES = {"pending", "preparing", "ready", "served"}
@@ -257,7 +265,7 @@ def advance_order_status(request, order_id):
         messages.error(request, "You're updating tickets too quickly — please wait a moment and try again.")
         return redirect("kitchendashboard")
 
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     order = get_object_or_404(Order, id=order_id, table_session__restaurant=restaurant)
     new_status = request.POST.get("status")
 
@@ -276,7 +284,7 @@ def advance_order_status(request, order_id):
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
 def kitchendisplay(request):
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     orders = (Order.objects
               .filter(
                   table_session__restaurant=restaurant
@@ -297,7 +305,7 @@ def kitchendisplay(request):
 @restaurant_required
 @require_POST
 def mark_table_orders_ready(request, table_id):
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     try:
         table = get_object_or_404(Table, id=table_id, restaurant=restaurant)
 
@@ -327,7 +335,7 @@ def mark_table_orders_ready(request, table_id):
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
 def kitchendisplaywidget(request):
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     orders = (Order.objects
               .filter(
                   table_session__restaurant=restaurant
@@ -355,7 +363,7 @@ def management_dashboard(request):
     from django.db.models.functions import TruncDate, TruncHour
     from django.utils import timezone
 
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
 
     if request.user.role == "kitchen":
         messages.error(request, "Kitchen staff don't have access to the analytics dashboard.")
@@ -544,7 +552,7 @@ from django.db.models import F, Sum
 @restaurant_required
 @require_POST
 def close_table_session(request, table_id):
-    restaurant = request.user.restaurant
+    restaurant = get_dashboard_restaurant(request)
     table = get_object_or_404(Table, id=table_id, restaurant=restaurant)
     session = TableSession.objects.filter(
         table=table, status__in=["ordering", "awaiting_payment"]

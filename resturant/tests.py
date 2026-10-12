@@ -631,3 +631,180 @@ class TestManagementDashboardFilters(BaseTestCase):
             resp.context["best_sellers"].values_list("menu_item__name", flat=True)
         )
         self.assertCountEqual(sellers, ["Fries", "Burger"])
+
+
+class TestRestaurantScopedDashboard(BaseTestCase):
+    def _other_session_order(self, status="pending"):
+        session = TableSession.objects.create(
+            table=self.other_table, restaurant=self.other_restaurant, status="ordering"
+        )
+        return Order.objects.create(table_session=session, status=status)
+
+    def _own_session_order(self, status="pending"):
+        session = TableSession.objects.create(
+            table=self.table, restaurant=self.restaurant, status="ordering"
+        )
+        return Order.objects.create(table_session=session, status=status)
+
+    def test_staff_board_only_shows_own_restaurants_orders(self):
+        own = self._own_session_order()
+        other = self._other_session_order()
+        self.client.login(username="kitchen", password="testpass123")
+
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["restaurant"], self.restaurant)
+        ids = set(resp.context["orders"].values_list("id", flat=True))
+        self.assertIn(own.id, ids)
+        self.assertNotIn(other.id, ids)
+
+    def test_staff_cannot_advance_other_restaurants_order(self):
+        other = self._other_session_order()
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.post(
+            f"/kitchen/order/{other.id}/status/", {"status": "preparing"}
+        )
+        self.assertEqual(resp.status_code, 404)
+        other.refresh_from_db()
+        self.assertEqual(other.status, "pending")
+
+    def test_staff_cannot_close_other_restaurants_table(self):
+        session = TableSession.objects.create(
+            table=self.other_table, restaurant=self.other_restaurant, status="ordering"
+        )
+        Order.objects.create(table_session=session, status="served")
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.post(f"/table/{self.other_table.id}/close/")
+        self.assertEqual(resp.status_code, 404)
+        session.refresh_from_db()
+        self.assertEqual(session.status, "ordering")
+
+    def test_staff_board_has_no_restaurant_switcher(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertIsNone(resp.context["restaurants"])
+        self.assertNotContains(resp, 'id="restaurant-switch"')
+
+
+class TestSuperuserRestaurantSwitcher(BaseTestCase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.superuser = User.objects.create_superuser(
+            username="root",
+            email="root@example.com",
+            password="rootpass123",
+        )
+
+    def _own_order(self, status="pending"):
+        session = TableSession.objects.create(
+            table=self.table, restaurant=self.restaurant, status="ordering"
+        )
+        return Order.objects.create(table_session=session, status=status)
+
+    def _other_order(self, status="pending"):
+        session = TableSession.objects.create(
+            table=self.other_table, restaurant=self.other_restaurant, status="ordering"
+        )
+        return Order.objects.create(table_session=session, status=status)
+
+    def test_superuser_can_open_dashboard_without_own_restaurant(self):
+        self.assertIsNone(self.superuser.restaurant)
+        self.client.login(username="root", password="rootpass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_superuser_switches_to_chosen_restaurant(self):
+        self._other_order()
+        self.client.login(username="root", password="rootpass123")
+        resp = self.client.get(
+            f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}"
+        )
+        self.assertEqual(resp.context["restaurant"], self.other_restaurant)
+        self.assertContains(resp, 'id="restaurant-switch"')
+        self.assertContains(resp, self.other_restaurant.name)
+
+    def test_superuser_board_is_scoped_to_selected_restaurant(self):
+        own = self._own_order()
+        other = self._other_order()
+        self.client.login(username="root", password="rootpass123")
+        resp = self.client.get(
+            f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}"
+        )
+        ids = set(resp.context["orders"].values_list("id", flat=True))
+        self.assertIn(other.id, ids)
+        self.assertNotIn(own.id, ids)
+
+    def test_superuser_actions_use_the_selected_restaurant(self):
+        other = self._other_order()
+        self.client.login(username="root", password="rootpass123")
+        # Selecting the restaurant persists it in the session for later POSTs.
+        self.client.get(f"/kitchen/dashboard/?restaurant={self.other_restaurant.id}")
+        resp = self.client.post(
+            f"/kitchen/order/{other.id}/status/", {"status": "preparing"}
+        )
+        self.assertEqual(resp.status_code, 302)
+        other.refresh_from_db()
+        self.assertEqual(other.status, "preparing")
+
+
+class TestRestaurantRequiredAndUserValidation(BaseTestCase):
+    def test_staff_without_restaurant_is_redirected_to_login(self):
+        User.objects.create_user(username="floating", password="testpass123")
+        self.client.login(username="floating", password="testpass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertRedirects(resp, "/kitchen/login/", fetch_redirect_response=False)
+
+    def test_staff_without_restaurant_fails_model_validation(self):
+        from django.core.exceptions import ValidationError
+
+        user = User(username="nores", role="staff")
+        with self.assertRaises(ValidationError):
+            user.full_clean(exclude=["password"])
+
+    def test_superuser_without_restaurant_passes_model_validation(self):
+        user = User(username="root2", is_superuser=True, is_staff=True)
+        # Should not raise for the restaurant field.
+        user.full_clean(exclude=["password"])
+
+
+class TestSuperuserWithoutRestaurants(TestCase):
+    def test_dashboard_renders_empty_board(self):
+        User.objects.create_superuser(
+            username="solo", email="solo@example.com", password="solopass123"
+        )
+        self.client.login(username="solo", password="solopass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIsNone(resp.context["restaurant"])
+        self.assertEqual(resp.context["orders"].count(), 0)
+
+
+class TestDashboardBranding(BaseTestCase):
+    def test_login_page_shows_restaurant_name(self):
+        resp = self.client.get("/kitchen/login/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.restaurant.name)
+
+    def test_kitchen_dashboard_shows_restaurant_name(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/kitchen/dashboard/")
+        self.assertContains(resp, self.restaurant.name)
+
+    def test_management_dashboard_shows_restaurant_name(self):
+        self.client.login(username="owner", password="testpass123")
+        resp = self.client.get("/dashboard/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.restaurant.name)
+
+    def test_kitchen_display_shows_restaurant_name(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/kitchen/display/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.restaurant.name)
+
+    def test_kitchen_display_widget_shows_restaurant_name(self):
+        self.client.login(username="kitchen", password="testpass123")
+        resp = self.client.get("/kitchen/displaywidget/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, self.restaurant.name)

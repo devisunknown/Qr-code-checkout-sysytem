@@ -121,11 +121,15 @@
 <aside class="flex flex-col h-full py-base bg-surface-container-low border-r-2 border-outline-variant w-64 shrink-0">
 <div class="px-6 py-8 flex flex-col gap-1">
 <div class="flex items-center gap-3 mb-4">
-<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center overflow-hidden">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-full h-full object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-on-primary-container">restaurant</span>
+{% endif %}
 </div>
 <div>
-<h1 class="font-headline-md text-headline-md text-primary leading-none">Main Kitchen</h1>
+<h1 class="font-headline-md text-headline-md text-primary leading-none">{{ restaurant.name|default:"Main Kitchen" }}</h1>
 <p class="font-label-sm text-label-sm text-on-surface-variant">{{ live_ticket_count }} live ticket{{ live_ticket_count|pluralize }}</p>
 </div>
 </div>
@@ -154,7 +158,27 @@
 
 <!-- Top Bar -->
 <header class="flex justify-between items-center w-full px-margin-desktop h-touch-target-min border-b-2 border-outline-variant bg-surface sticky top-0 z-10">
-<div class="font-headline-md text-headline-md font-bold text-primary">{{ restaurant.name }}</div>
+<div class="flex items-center gap-3">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-10 h-10 rounded-xl object-cover"/>
+{% else %}
+<span class="material-symbols-outlined text-primary" style="font-size: 32px;">restaurant</span>
+{% endif %}
+<div class="font-headline-md text-headline-md font-bold text-primary">
+{% if restaurants %}
+<form method="get" class="flex items-center gap-2">
+<label for="restaurant-switch" class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Viewing</label>
+<select id="restaurant-switch" name="restaurant" onchange="this.form.submit()" class="rounded-lg border-2 border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-headline-md text-headline-md font-bold text-primary cursor-pointer">
+{% for r in restaurants %}
+<option value="{{ r.id }}" {% if selected_restaurant and r.id == selected_restaurant.id %}selected{% endif %}>{{ r.name }}</option>
+{% endfor %}
+</select>
+</form>
+{% else %}
+{{ restaurant.name }}
+{% endif %}
+</div>
+</div>
 <div class="flex items-center gap-4">
 <span class="font-label-sm text-label-sm text-on-surface-variant">Welcome, {{ request.user.username }}</span>
 <div class="ml-2 w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">

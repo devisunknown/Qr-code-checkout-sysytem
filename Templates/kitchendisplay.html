@@ -4,7 +4,7 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Table 5 | Kitchen Display System</title>
+<title>{{ restaurant.name|default:"Kitchen Display" }} | Kitchen Display System</title>
 <link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon-192x192.png' %}">
 <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -135,8 +135,12 @@
 <!-- TopAppBar - Staff Facing -->
 <header class="bg-surface dark:bg-surface-dim shadow-sm docked full-width top-0 sticky z-50 flex justify-between items-center w-full px-margin-desktop h-touch-target-min border-b-2 border-surface-variant">
 <div class="flex items-center gap-4">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-10 h-10 rounded-xl object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-size: 32px;">restaurant</span>
-<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">Table 5 KDS</h1>
+{% endif %}
+<h1 class="text-headline-md font-headline-md text-primary dark:text-primary-fixed-dim">{{ restaurant.name|default:"Kitchen Display" }} KDS</h1>
 </div>
 <div class="flex items-center gap-6">
 <div class="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-lg">

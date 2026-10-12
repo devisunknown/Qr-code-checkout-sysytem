@@ -152,6 +152,13 @@
 <!-- TopNavBar Implementation -->
 <header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim shadow-sm flex justify-between items-center px-margin-desktop h-touch-target-min">
 <div class="flex items-center gap-4">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-10 h-10 rounded-xl object-cover"/>
+{% else %}
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container">restaurant</span>
+</div>
+{% endif %}
 <h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">{{ restaurant.name }}</h1>
 </div>
 <div class="hidden md:flex flex-1 max-w-xl mx-8">
@@ -177,11 +184,15 @@
 <aside class="fixed left-0 top-0 pt-20 flex flex-col h-full bg-surface-container-low border-r-2 border-outline-variant w-64 shrink-0 z-40 hidden md:flex">
 <div class="px-6 py-8 flex flex-col gap-1">
 <div class="flex items-center gap-3 mb-4">
-<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center overflow-hidden">
+{% if restaurant.logo %}
+<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-full h-full object-cover"/>
+{% else %}
 <span class="material-symbols-outlined text-on-primary-container">restaurant</span>
+{% endif %}
 </div>
 <div>
-<h1 class="font-headline-md text-headline-md text-primary leading-none">Main Kitchen</h1>
+<h1 class="font-headline-md text-headline-md text-primary leading-none">{{ restaurant.name|default:"Main Kitchen" }}</h1>
 <p class="font-label-sm text-label-sm text-on-surface-variant">Management Dashboard</p>
 </div>
 </div>

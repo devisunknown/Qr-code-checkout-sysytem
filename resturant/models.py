@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 import uuid
 from cloudinary.models import CloudinaryField
 
@@ -27,6 +28,17 @@ class User(AbstractUser):
         Restaurant, on_delete=models.CASCADE, null=True, blank=True, related_name="users"
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="staff")
+
+    def clean(self):
+        super().clean()
+        # Every real account must belong to exactly one restaurant so the
+        # dashboard can scope its data. The platform superuser is exempt.
+        if self.is_superuser:
+            return
+        if self.restaurant_id is None:
+            raise ValidationError(
+                {"restaurant": "Staff accounts must be linked to a restaurant."}
+            )
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

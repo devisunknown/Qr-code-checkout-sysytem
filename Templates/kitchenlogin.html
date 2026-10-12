@@ -130,7 +130,11 @@
         <div class="w-full max-w-[440px] flex flex-col items-center">
             <div class="mb-10 text-center">
                 <div class="inline-flex items-center justify-center mb-4 p-4 rounded-full bg-surface-container-high">
+                    {% if restaurant.logo %}
+                    <img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-12 h-12 rounded-full object-cover"/>
+                    {% else %}
                     <span class="material-symbols-outlined text-primary text-4xl" data-icon="restaurant_menu">restaurant_menu</span>
+                    {% endif %}
                 </div>
                 <h1 class="font-headline-md text-headline-md text-primary tracking-tight">{{ restaurant.name|default:"Staff Portal" }}</h1>
                 <p class="font-label-sm text-label-sm text-on-surface-variant mt-1 uppercase tracking-widest">Staff Portal Access</p>
