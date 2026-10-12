@@ -1,9 +1,12 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, RequestFactory
+from django.test.utils import override_settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
+
+from resturant.middleware import SubdomainMiddleware
 
 from resturant.models import (
     Restaurant,
@@ -808,3 +811,40 @@ class TestDashboardBranding(BaseTestCase):
         resp = self.client.get("/kitchen/displaywidget/")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, self.restaurant.name)
+
+
+class TestSubdomainMiddleware(TestCase):
+    def setUp(self):
+        self.restaurant = Restaurant.objects.create(
+            name="Tasty Queen", slug="tastyqueen"
+        )
+        self.middleware = SubdomainMiddleware(lambda request: HttpResponse("ok"))
+
+    def _resolve(self, host):
+        request = RequestFactory(HTTP_HOST=host).get("/kitchen/login/")
+        with override_settings(ALLOWED_HOSTS=["*"]):
+            self.middleware(request)
+        return getattr(request, "restaurant", "MISSING")
+
+    def test_custom_domain_uses_matching_slug(self):
+        self.assertEqual(self._resolve("tastyqueen.com"), self.restaurant)
+
+    def test_subdomain_uses_matching_slug(self):
+        self.assertEqual(self._resolve("tastyqueen.example.com"), self.restaurant)
+
+    def test_platform_domain_falls_back_to_first_active(self):
+        self.assertEqual(self._resolve("speedyorder.onrender.com"), self.restaurant)
+
+    def test_nested_subdomain_uses_first_label(self):
+        self.assertEqual(
+            self._resolve("tastyqueen.speedyorder.onrender.com"), self.restaurant
+        )
+
+    def test_unknown_host_with_no_restaurants_returns_none(self):
+        Restaurant.objects.all().delete()
+        self.assertIsNone(self._resolve("speedyorder.onrender.com"))
+
+    def test_inactive_restaurant_is_not_used(self):
+        self.restaurant.is_active = False
+        self.restaurant.save()
+        self.assertIsNone(self._resolve("tastyqueen.com"))

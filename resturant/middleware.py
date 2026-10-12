@@ -23,15 +23,17 @@ class SubdomainMiddleware:
                 if request.restaurant:
                     request.session["restaurant_slug"] = request.restaurant.slug
         else:
-            base_domain = ".".join(host.split(".")[-2:])
-            subdomain = host.replace("." + base_domain, "").replace(base_domain, "").strip(".")
-            if subdomain and subdomain != "www":
-                try:
-                    request.restaurant = Restaurant.objects.get(slug=subdomain, is_active=True)
-                except Restaurant.DoesNotExist:
-                    request.restaurant = None
-            else:
-                request.restaurant = Restaurant.objects.filter(is_active=True).first()
+            # Restaurants are addressed by the first host label, e.g.
+            #   tastyqueen.example.com -> slug "tastyqueen"
+            #   tastyqueen.com         -> slug "tastyqueen"
+            # On a shared platform domain (e.g. <app>.onrender.com) there is no
+            # per-restaurant subdomain, so fall back to the first active
+            # restaurant rather than rendering the page with no branding.
+            candidate = host.split(".")[0]
+            restaurant = None
+            if candidate and candidate != "www":
+                restaurant = Restaurant.objects.filter(slug=candidate, is_active=True).first()
+            request.restaurant = restaurant or Restaurant.objects.filter(is_active=True).first()
 
         response = self.get_response(request)
         return response
