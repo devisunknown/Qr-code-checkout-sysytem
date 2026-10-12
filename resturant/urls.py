@@ -1,7 +1,9 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
+    path("favicon.ico", RedirectView.as_view(url="/static/favicon.ico", permanent=True)),
     path("<slug:restaurant_slug>/<uuid:qr_token>/", views.index, name="table_menu"),
     path("<slug:restaurant_slug>/<uuid:qr_token>/cart/", views.cart, name="table_cart"),
     path("<slug:restaurant_slug>/<uuid:qr_token>/cart/update/<int:item_id>/", views.cart_update, name="cart_update"),
