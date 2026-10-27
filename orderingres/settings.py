@@ -29,7 +29,7 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # django-ratelimit is enabled by default and switched off only in CI/tests.
 RATELIMIT_ENABLE = os.environ.get('RATELIMIT_ENABLE', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = ['speedyorder.onrender.com', 'localhost', '127.0.0.1', '*.speedyorder.onrender.com']
+ALLOWED_HOSTS = ['speedyorder.onrender.com', 'localhost', '127.0.0.1', '*.speedyorder.onrender.com', '*.vercel.app']
 # Extra hosts (e.g. Vercel deployments) come via the environment, comma-separated.
 ALLOWED_HOSTS += [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
 # CSRF origins for those hosts must include the scheme (e.g. https://app.vercel.app).
@@ -87,7 +87,11 @@ WSGI_APPLICATION = 'orderingres.wsgi.application'
 
 if os.environ.get('DATABASE_URL'):
     DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=60)
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=60,
+            ssl_require=True,
+        )
     }
 else:
     DATABASES = {
