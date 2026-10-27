@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ restaurant.name }} | Menu Management</title>
+<link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon-192x192.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#535353",
+                    "primary-fixed-dim": "#ffb59b",
+                    "on-tertiary-fixed-variant": "#474747",
+                    "primary": "#973100",
+                    "on-surface-variant": "#594139",
+                    "on-tertiary-fixed": "#1b1c1c",
+                    "secondary-container": "#e5e2dc",
+                    "surface-bright": "#fbf9f8",
+                    "primary-container": "#c04000",
+                    "surface-container": "#efeded",
+                    "on-primary-container": "#ffe9e3",
+                    "surface-tint": "#a93700",
+                    "tertiary-fixed": "#e4e2e1",
+                    "error-container": "#ffdad6",
+                    "background": "#fbf9f8",
+                    "inverse-on-surface": "#f2f0f0",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "surface": "#fbf9f8",
+                    "outline": "#8d7167",
+                    "secondary": "#5f5e5a",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "outline-variant": "#e1bfb4",
+                    "on-primary-fixed-variant": "#812800",
+                    "primary-fixed": "#ffdbcf",
+                    "on-secondary-fixed": "#1c1c18",
+                    "surface-container-low": "#f5f3f3",
+                    "on-background": "#1b1c1c",
+                    "surface-container-high": "#e9e8e7",
+                    "inverse-surface": "#303031",
+                    "surface-dim": "#dbdad9",
+                    "secondary-fixed-dim": "#c9c6c1",
+                    "tertiary-fixed-dim": "#c8c6c6",
+                    "on-primary-fixed": "#380d00",
+                    "inverse-primary": "#ffb59b",
+                    "tertiary-container": "#6c6b6b",
+                    "surface-variant": "#e4e2e2",
+                    "on-secondary-container": "#656460",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#e5e2dc",
+                    "on-surface": "#1b1c1c",
+                    "surface-container-highest": "#e4e2e2",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#efedec",
+                    "on-secondary-fixed-variant": "#474743"
+            },
+            "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+            "spacing": { "touch-target-min": "48px", "base": "8px", "gutter": "16px", "margin-desktop": "40px" },
+            "fontFamily": { "headline-md": ["Montserrat"], "display-lg": ["Montserrat"], "headline-lg": ["Montserrat"], "body-md": ["Inter"], "price-display": ["Inter"], "body-lg": ["Inter"], "label-sm": ["Inter"] },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "price-display": ["20px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #fbf9f8; }
+      ::-webkit-scrollbar-thumb { background: #e1bfb4; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #c04000; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-6 h-[64px]">
+<a class="flex items-center gap-3" href="{% url 'menu_management' restaurant_slug=restaurant.slug %}">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center overflow-hidden">
+{% if restaurant.logo %}<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-full h-full object-cover"/>
+{% else %}<span class="material-symbols-outlined text-on-primary-container">restaurant</span>{% endif %}
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">{{ restaurant.name }}</h1>
+</a>
+<form class="hidden md:block relative w-72" method="get" action="{% url 'menu_management' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input name="q" value="{{ query }}" placeholder="Search dishes..." class="w-full bg-surface-container-low rounded-full py-2 pl-9 pr-3 text-sm border-none focus:ring-2 focus:ring-primary"/>
+</form>
+<div class="flex items-center gap-2">
+<a href="{% url 'dashboard' restaurant_slug=restaurant.slug %}" class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">dashboard</a>
+<a href="{% url 'inventory' restaurant_slug=restaurant.slug %}" class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">inventory_2</a>
+<a href="{% url 'menu_item_add' restaurant_slug=restaurant.slug %}" class="bg-primary hover:bg-primary-container text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add_circle</span> Add Dish</a>
+</div>
+</header>
+<aside class="fixed left-0 top-0 pt-20 flex-col h-full bg-surface-container-low border-r-2 border-outline-variant w-64 shrink-0 z-40 hidden md:flex">
+<nav class="flex-1 px-4 space-y-2">
+<div class="px-3 mb-2 font-label-sm uppercase tracking-widest text-on-surface-variant text-xs">Manage</div>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg" href="{% url 'dashboard' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">dashboard</span><span class="font-label-sm">Dashboard</span></a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container font-bold rounded-lg" href="{% url 'menu_management' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">restaurant_menu</span><span class="font-label-sm">Menu</span></a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg" href="{% url 'inventory' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">inventory_2</span><span class="font-label-sm">Inventory</span></a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg" href="{% url 'kitchendashboard' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">receipt_long</span><span class="font-label-sm">Live Tickets</span></a>
+</nav>
+</aside>
+<main class="md:ml-64 pt-20 px-4 md:px-10 pb-12">
+{% if messages %}
+<div class="grid grid-cols-1 gap-2 mb-4">
+{% for msg in messages %}
+<div class="{% if msg.tags == 'success' %}bg-green-100 text-green-800{% elif msg.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-primary-fixed text-on-primary-fixed-variant{% endif %} px-4 py-2.5 rounded-xl text-sm font-medium">{{ msg }}</div>
+{% endfor %}
+</div>
+{% endif %}
+<div class="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Menu Management</h1>
+<p class="text-on-surface-variant font-body-md">Add, edit and retire dishes. Customers see changes immediately.</p>
+</div>
+<a href="{% url 'menu_item_add' restaurant_slug=restaurant.slug %}" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2">
+<span class="material-symbols-outlined">add_circle</span> Add New Dish</a>
+</div>
+<!-- Categories -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container mb-6">
+<div class="flex flex-wrap items-center gap-2 mb-3">
+<h3 class="font-headline-md text-on-surface mr-auto">Categories</h3>
+{% for cat in categories %}
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1.5 rounded-full text-label-sm font-bold">{{ cat.name }}</span>
+{% empty %}
+<span class="text-on-surface-variant text-sm">No categories yet — add one below or create it with your first dish.</span>
+{% endfor %}
+</div>
+<form method="post" action="{% url 'category_add' restaurant_slug=restaurant.slug %}" class="flex items-center gap-2 max-w-md">
+{% csrf_token %}
+<input name="name" placeholder="New category name (e.g. Drinks)" required class="flex-1 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm"/>
+<button type="submit" class="bg-surface-container-high hover:bg-secondary-fixed text-on-surface px-4 py-2 rounded-lg text-label-sm font-bold transition-all">Add</button>
+</form>
+</div>
+<!-- Item list -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+{% for item in menu_items %}
+<article class="bg-surface-container-lowest rounded-2xl border border-surface-container overflow-hidden hover:border-primary-fixed transition-all flex flex-col">
+<div class="h-36 bg-surface-container relative">
+{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-full object-cover"/>
+{% else %}<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-4xl">restaurant_menu</span></div>{% endif %}
+{% if not item.is_available %}
+<span class="absolute top-3 left-3 bg-error text-white px-3 py-1 rounded-full text-xs font-bold">Unavailable</span>
+{% elif item.is_stock_tracked and item.stock_status == 'low' %}
+<span class="absolute top-3 left-3 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">Low stock · {{ item.stock_quantity }}</span>
+{% elif item.is_stock_tracked and item.stock_quantity == 0 %}
+<span class="absolute top-3 left-3 bg-error text-white px-3 py-1 rounded-full text-xs font-bold">Sold out</span>
+{% endif %}
+</div>
+<div class="p-5 flex-1 flex flex-col gap-2">
+<div class="flex items-start justify-between gap-2">
+<div>
+<h4 class="font-bold text-on-surface">{{ item.name }}</h4>
+<p class="text-xs text-on-surface-variant">{{ item.category.name|default:"Uncategorised" }}{% if item.is_stock_tracked %} · Stock {{ item.stock_quantity }}{% else %} · Unlimited{% endif %}</p>
+</div>
+<span class="text-primary font-bold text-price-display whitespace-nowrap">₵{{ item.price|floatformat:2 }}</span>
+</div>
+{% if item.description %}<p class="text-sm text-on-surface-variant line-clamp-2">{{ item.description }}</p>{% endif %}
+<div class="mt-auto flex items-center gap-2 pt-2">
+<a href="{% url 'menu_item_edit' restaurant_slug=restaurant.slug item_id=item.id %}" class="flex-1 text-center bg-surface-container-high hover:bg-secondary-fixed px-3 py-2 rounded-lg text-label-sm font-bold transition-all">
+edit Edit
+</a>
+<form method="post" action="{% url 'menu_item_delete' restaurant_slug=restaurant.slug item_id=item.id %}" onsubmit="return confirm('Delete {{ item.name }}? This cannot be undone.');">
+{% csrf_token %}
+<button type="submit" class="bg-error-container hover:bg-error text-on-error-container hover:text-white px-3 py-2 rounded-lg text-label-sm font-bold transition-all">delete Delete</button>
+</form>
+</div>
+</div>
+</article>
+{% empty %}
+<div class="col-span-full text-center py-16 text-on-surface-variant">
+<span class="material-symbols-outlined text-5xl mb-2">restaurant</span>
+<p>No dishes match. Add your first dish to get started.</p>
+</div>
+{% endfor %}
+</div>
+</main>
+</body></html>

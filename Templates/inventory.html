@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ restaurant.name }} | Inventory</title>
+<link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon-192x192.png' %}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+      tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+        "tertiary": "#535353", "primary-fixed-dim": "#ffb59b", "primary": "#973100",
+        "on-surface-variant": "#594139", "on-tertiary-fixed": "#1b1c1c", "secondary-container": "#e5e2dc",
+        "primary-container": "#c04000", "surface-container": "#efeded", "on-primary-container": "#ffe9e3",
+        "error-container": "#ffdad6", "error": "#ba1a1a", "surface": "#fbf9f8", "outline": "#8d7167",
+        "secondary": "#5f5e5a", "surface-container-lowest": "#ffffff", "on-error": "#ffffff",
+        "outline-variant": "#e1bfb4", "primary-fixed": "#ffdbcf", "on-secondary-container": "#656460",
+        "surface-container-low": "#f5f3f3", "on-background": "#1b1c1c", "surface-container-high": "#e9e8e7",
+        "on-surface": "#1b1c1c", "on-primary": "#ffffff", "yellow-ok": "#facc15"
+      }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem" },
+      fontFamily: { "headline-md": ["Montserrat"], "headline-lg": ["Montserrat"], "body-md": ["Inter"], "label-sm": ["Inter"] } } } }
+    </script>
+<style>.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md">
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-6 h-[64px]">
+<a class="flex items-center gap-3" href="{% url 'inventory' restaurant_slug=restaurant.slug %}">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center overflow-hidden">
+{% if restaurant.logo %}<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-full h-full object-cover"/>
+{% else %}<span class="material-symbols-outlined text-on-primary-container">restaurant</span>{% endif %}
+</div>
+<h1 class="font-headline-md text-xl font-bold text-primary">{{ restaurant.name }}</h1>
+</a>
+<form class="hidden md:block relative w-72" method="get" action="{% url 'inventory' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input name="q" value="{{ query }}" placeholder="Search stock..." class="w-full bg-surface-container-low rounded-full py-2 pl-9 pr-3 text-sm border-none focus:ring-2 focus:ring-primary"/>
+</form>
+<a href="{% url 'menu_management' restaurant_slug=restaurant.slug %}" class="text-sm font-bold text-primary hover:underline">← Menu Management</a>
+</header>
+<main class="max-w-3xl mx-auto px-4 pt-24 pb-16">
+{% if messages %}{% for msg in messages %}
+<div class="{% if msg.tags == 'success' %}bg-green-100 text-green-800{% elif msg.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-primary-fixed text-on-primary-fixed-variant{% endif %} px-4 py-2.5 rounded-xl text-sm font-medium mb-3">{{ msg }}</div>
+{% endfor %}{% endif %}
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Inventory</h1>
+<p class="text-on-surface-variant font-body-md mb-6">Stock counts per dish. Orders placed by customers automatically deduct stock; dishes run to zero become unavailable.</p>
+{% if low_out_items %}
+<div class="bg-error-container/60 border border-error/20 rounded-2xl p-4 mb-6">
+<h3 class="font-bold text-on-error-container flex items-center gap-2 mb-1"><span class="material-symbols-outlined">warning</span> Needs attention</h3>
+<p class="text-sm text-on-error-container/90">{% for i in low_out_items %}<strong>{{ i.name }}</strong>{% if i.stock_status == 'out' %} (out){% else %} ({{ i.stock_quantity }} left){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+</div>
+{% endif %}
+<div class="space-y-3">
+{% for item in menu_items %}
+{% if item.is_stock_tracked %}
+<div class="bg-surface-container-lowest rounded-2xl border border-surface-container p-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center shrink-0 overflow-hidden">
+{% if item.image %}<img src="{{ item.image.url }}" alt="" class="w-full h-full object-cover"/>
+{% else %}<span class="material-symbols-outlined text-on-surface-variant">restaurant_menu</span>{% endif %}
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<h4 class="font-bold text-on-surface truncate">{{ item.name }}</h4>
+{% if item.stock_status == 'out' %}<span class="bg-error text-white px-2.5 py-0.5 rounded-full text-xs font-bold">Sold out</span>
+{% elif item.stock_status == 'low' %}<span class="bg-yellow-400 text-yellow-900 px-2.5 py-0.5 rounded-full text-xs font-bold">Low {{ item.stock_quantity }}</span>
+{% else %}<span class="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-bold">In stock</span>{% endif %}
+{% if not item.is_available %}<span class="bg-surface-container text-secondary px-2.5 py-0.5 rounded-full text-xs font-bold">Hidden</span>{% endif %}
+</div>
+<p class="text-xs text-on-surface-variant mt-0.5">{{ item.category.name|default:"Uncategorised" }} · alert at ≤{{ item.low_stock_threshold }}</p>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="font-price-display text-xl font-bold text-primary w-12 text-center">{{ item.stock_quantity }}</span>
+<form method="post" action="{% url 'inventory_adjust' restaurant_slug=restaurant.slug item_id=item.id %}" class="flex items-center gap-1">
+{% csrf_token %}
+<input type="hidden" name="delta" value="-1"/>
+<button type="submit" class="w-9 h-9 rounded-full bg-surface-container-high hover:bg-outline-variant/40 font-bold transition-all">−</button>
+<button type="submit" name="delta" value="1" class="w-9 h-9 rounded-full bg-primary hover:bg-primary-container text-white font-bold transition-all">+</button>
+</form>
+<form method="post" action="{% url 'inventory_adjust' restaurant_slug=restaurant.slug item_id=item.id %}" class="flex items-center gap-1">
+{% csrf_token %}
+<input type="hidden" name="delta" value="10"/>
+<button type="submit" class="h-9 px-3 rounded-full bg-surface-container-high hover:bg-outline-variant/40 text-label-sm font-bold transition-all">+10</button>
+</form>
+</div>
+</div>
+{% else %}
+<div class="bg-surface-container-low rounded-2xl border border-surface-container p-4 flex items-center gap-4 opacity-70">
+<div class="flex-1">
+<h4 class="font-bold text-on-surface">{{ item.name }}</h4>
+<p class="text-xs text-on-surface-variant">Unlimited — stock not tracked</p>
+</div>
+<form method="post" action="{% url 'inventory_adjust' restaurant_slug=restaurant.slug item_id=item.id %}">
+{% csrf_token %}
+<input type="hidden" name="delta" value="20"/>
+<button type="submit" class="text-label-sm bg-surface-container-high hover:bg-secondary-fixed px-3 py-2 rounded-lg font-bold transition-all">Start tracking (20)</button>
+</form>
+</div>
+{% endif %}
+{% empty %}
+<p class="text-center text-on-surface-variant py-10">No dishes yet.</p>
+{% endfor %}
+</div>
+</main>
+</body></html>

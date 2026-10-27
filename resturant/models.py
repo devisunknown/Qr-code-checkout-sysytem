@@ -98,10 +98,48 @@ class MenuItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = CloudinaryField("image", blank=True, null=True)
     is_available = models.BooleanField(default=True)
+    stock_quantity = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text="Units left for this dish. Leave blank to track unlimited stock.",
+    )
+    low_stock_threshold = models.PositiveIntegerField(default=5)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["category__display_order", "name"]
+
+    @property
+    def is_stock_tracked(self):
+        return self.stock_quantity is not None
+
+    @property
+    def stock_status(self):
+        """'out' | 'low' | 'ok' — used for badges on staff pages."""
+        if not self.is_stock_tracked or not self.is_available:
+            return "ok"
+        if self.stock_quantity == 0:
+            return "out"
+        if self.stock_quantity <= self.low_stock_threshold:
+            return "low"
+        return "ok"
+
+    def decrement_stock(self, quantity):
+        """Take ``quantity`` units off after an order is placed.
+
+        Returns a short status string for flash messages: 'ok', 'low' or
+        'soldout'. Sold-out items are automatically flagged unavailable so
+        they disappear from the customer menu.
+        """
+        if not self.is_stock_tracked:
+            return "ok"
+        self.stock_quantity = max(0, self.stock_quantity - quantity)
+        if self.stock_quantity == 0:
+            self.is_available = False
+        elif self.stock_quantity <= self.low_stock_threshold:
+            self.save(update_fields=["stock_quantity"])
+            return "low"
+        self.save(update_fields=["stock_quantity", "is_available"])
+        return "low" if self.stock_quantity <= self.low_stock_threshold else "ok"
 
     def __str__(self):
         return self.name

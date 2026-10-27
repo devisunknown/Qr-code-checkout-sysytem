@@ -57,7 +57,9 @@ def cart(request, restaurant_slug, qr_token):
         if menu_item_id:
             menu_item = get_object_or_404(MenuItem, id=menu_item_id, restaurant=table.restaurant)
             quantity = int(request.POST.get("quantity", 1) or 1)
-            if quantity > 0:
+            if not menu_item.is_available or (menu_item.is_stock_tracked and menu_item.stock_quantity < quantity):
+                messages.error(request, f"Sorry, {menu_item.name} is sold out or not in stock.")
+            elif quantity > 0:
                 cart_item, created = CartItem.objects.get_or_create(
                     table_session=session,
                     menu_item=menu_item,
@@ -177,6 +179,19 @@ def cart_send(request, restaurant_slug, qr_token):
     items = list(session.cart_items.select_related("menu_item"))
 
     if items:
+        # Reject the whole submission if anything went out of stock since it
+        # was added to the cart — partial orders are worse than none.
+        unavailable = [
+            item.menu_item.name for item in items
+            if not item.menu_item.is_available or (
+                item.menu_item.is_stock_tracked
+                and item.menu_item.stock_quantity < item.quantity
+            )
+        ]
+        if unavailable:
+            messages.error(request, "Sorry, the following just sold out: " + ", ".join(unavailable) + ". Please adjust your cart.")
+            return redirect("table_cart", restaurant_slug=restaurant_slug, qr_token=qr_token)
+
         with transaction.atomic():
             order = Order.objects.create(table_session=session, status="pending")
             OrderItem.objects.bulk_create([
@@ -189,9 +204,15 @@ def cart_send(request, restaurant_slug, qr_token):
                 )
                 for item in items
             ])
+            low_stock_names = []
+            for item in items:
+                if item.menu_item.decrement_stock(item.quantity) == "low" and item.menu_item.stock_status == "low":
+                    low_stock_names.append(item.menu_item.name)
             session.cart_items.all().delete()
             session.status = "awaiting_payment"
             session.save(update_fields=["status"])
+        if low_stock_names:
+            messages.info(request, "Heads up: low stock remaining for " + ", ".join(low_stock_names) + ".")
         return redirect("orderstatus", restaurant_slug=restaurant_slug, qr_token=qr_token)
 
     return redirect("table_cart", restaurant_slug=restaurant_slug, qr_token=qr_token)
@@ -406,10 +427,19 @@ def helpdesk(request, restaurant_slug, qr_token):
 @ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
 @restaurant_required
 def management_dashboard(request, restaurant_slug):
+    import json
     from datetime import timedelta, datetime as dt_cls, time as time_cls, date as date_cls
-    from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, fields
-    from django.db.models.functions import TruncDate, TruncHour
+    from decimal import Decimal
+    from django.db.models import Sum, Count, Avg, F, ExpressionWrapper, fields, Q
+    from django.core.paginator import Paginator
+    from django.db.models.functions import TruncDate, TruncHour, ExtractWeekDay, ExtractHour
     from django.utils import timezone
+
+    def _json_money(value):
+        """Convert Decimals to floats so json_script output is valid JSON."""
+        if isinstance(value, Decimal):
+            return float(value)
+        return value
 
     restaurant = get_dashboard_restaurant(request, restaurant_slug)
 
@@ -483,7 +513,7 @@ def management_dashboard(request, restaurant_slug):
 
     total_orders = filtered_orders.count()
 
-    avg_prep_time = orders.filter(
+    avg_prep_time = filtered_orders.filter(
         status__in=['ready', 'served'],
         started_preparing_at__isnull=False
     ).aggregate(
@@ -498,6 +528,25 @@ def management_dashboard(request, restaurant_slug):
     avg_prep_minutes = 0
     if avg_prep_time:
         avg_prep_minutes = round(avg_prep_time.total_seconds() / 60)
+
+    avg_order_value = _json_money(
+        total_revenue / total_orders) if total_orders else 0.0
+
+    # Bill analytics, scoped to table sessions opened within the same range.
+    # date_filters look like {"placed_at__date__gte": ...}; reuse the suffix.
+    bill_date_filter = {
+        f'table_session__opened_at__{key.split("placed_at__", 1)[-1]}': value
+        for key, value in date_filters.items()
+    }
+    bills = Bill.objects.filter(
+        table_session__restaurant=restaurant, **bill_date_filter
+    )
+    paid_bill_stats = bills.filter(is_paid=True).aggregate(
+        total_paid=Sum('amount'), paid_count=Count('id')
+    )
+    unpaid_bill_stats = bills.filter(is_paid=False).aggregate(
+        total_outstanding=Sum('amount'), unpaid_count=Count('id')
+    )
 
     if active_range == 'today':
         bucket = TruncHour('order__placed_at')
@@ -525,6 +574,75 @@ def management_dashboard(request, restaurant_slug):
         sales_buckets, series_start, series_end,
         is_hourly=(active_range == 'today')
     )
+
+    sales_chart_labels = [entry['day'] for entry in sales_data]
+    sales_chart_values = [entry['amount'] for entry in sales_data]
+
+    # ---- Deep analytics (all respect the selected date range) ----
+    # Most bought meals (top 5).
+    top_meals = filtered_order_items.values(
+        'menu_item__name'
+    ).annotate(
+        total_sold=Sum('quantity'),
+        total_revenue=Sum(F('quantity') * F('price_at_order'))
+    ).order_by('-total_sold')[:5]
+    top_meals = list(top_meals)
+    top_meal_names = [row['menu_item__name'] or 'Unknown' for row in top_meals]
+    top_meal_quantities = [row['total_sold'] for row in top_meals]
+    top_meal_revenues = [_json_money(row['total_revenue']) for row in top_meals]
+
+    # Revenue split by category (donut).
+    category_mix = filtered_order_items.values(
+        'menu_item__category__name'
+    ).annotate(
+        total_revenue=Sum(F('quantity') * F('price_at_order'))
+    ).order_by('-total_revenue')[:8]
+    category_names = [(row['menu_item__category__name'] or 'Uncategorised') for row in category_mix]
+    category_totals = [_json_money(row['total_revenue']) for row in category_mix]
+
+    # Orders by weekday (1=Sunday per ExtractWeekDay) and by hour.
+    weekday_counts = filtered_orders.annotate(
+        wd=ExtractWeekDay('placed_at')
+    ).values('wd').annotate(count=Count('id'))
+    weekday_map = {row['wd']: row['count'] for row in weekday_counts}
+    weekday_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    weekday_order = [2, 3, 4, 5, 6, 7, 1]
+    weekday_data = [weekday_map.get(wd, 0) for wd in weekday_order]
+
+    hour_counts = filtered_orders.annotate(
+        hr=ExtractHour('placed_at')
+    ).values('hr').annotate(count=Count('id'))
+    hour_map = {row['hr']: row['count'] for row in hour_counts}
+    hour_labels = [f"{h:02d}:00" for h in range(24)]
+    hour_data = [hour_map.get(h, 0) for h in range(24)]
+
+    # "Customers" = distinct table visits with orders inside the range,
+    # regardless of when the session itself was opened.
+    orders_in_range_filter = Q(
+        orders__placed_at__date__gte=start_date,
+        orders__placed_at__date__lte=custom_to if active_range == 'custom' else today,
+    )
+    sessions_in_range = TableSession.objects.filter(
+        restaurant=restaurant
+    ).annotate(order_count=Count('orders', filter=orders_in_range_filter))
+    total_customers = sessions_in_range.filter(order_count__gt=0).count()
+    repeat_customers = sessions_in_range.filter(order_count__gt=1).count()
+    repeat_rate = round(repeat_customers / total_customers * 100) if total_customers else 0
+    avg_income_per_customer = _json_money(total_revenue / total_customers) if total_customers else 0.0
+    avg_ticket = _json_money(total_revenue / total_orders) if total_orders else 0.0
+    avg_items_per_order = 0
+    if total_orders:
+        item_count = filtered_order_items.aggregate(items=Count('id'))['items'] or 0
+        avg_items_per_order = round(item_count / total_orders, 1)
+    top3_share = 0
+    total_rev_float = _json_money(total_revenue) or 0
+    if total_rev_float and len(top_meal_revenues) >= 3:
+        top3_share = round(sum(top_meal_revenues[:3]) / total_rev_float * 100)
+    elif total_rev_float:
+        top3_share = round(sum(top_meal_revenues) / total_rev_float * 100)
+    peak_weekday = weekday_labels[weekday_data.index(max(weekday_data))] if max(weekday_data, default=0) > 0 else '—'
+    peak_hour_idx = hour_data.index(max(hour_data)) if max(hour_data, default=0) > 0 else None
+    peak_hour = f"{peak_hour_idx:02d}:00" if peak_hour_idx is not None else '—'
 
     query = (request.GET.get('q') or '').strip()[:100]
 
@@ -560,10 +678,15 @@ def management_dashboard(request, restaurant_slug):
 
     recent_orders = orders.select_related('table_session__table').prefetch_related(
         'items__menu_item'
-    )
+    ).order_by('-placed_at')
     if query:
         recent_orders = recent_orders.filter(items__menu_item__name__icontains=query).distinct()
-    recent_orders = recent_orders.order_by('-placed_at')[:10]
+
+    paginator = Paginator(recent_orders, 20)
+    try:
+        recent_orders_page = paginator.get_page(request.GET.get('page'))
+    except Exception:
+        recent_orders_page = paginator.get_page(1)
 
     if active_range == 'custom':
         range_from_iso = start_date.isoformat()
@@ -572,26 +695,279 @@ def management_dashboard(request, restaurant_slug):
         range_from_iso = start_date.isoformat()
         range_to_iso = today.isoformat()
 
+    # Preserve range/search filters when paging through recent orders.
+    pagination_params = request.GET.copy()
+    pagination_params.pop('page', None)
+    if not pagination_params:
+        pagination_params['range'] = active_range
+        pagination_params['from'] = range_from_iso
+        pagination_params['to'] = range_to_iso
+        if query:
+            pagination_params['q'] = query
+    pagination_qs = pagination_params.urlencode()
+
     context = {
         'total_revenue': total_revenue,
         'total_orders': total_orders,
+        'best_sellers_names': [row['menu_item__name'] or 'Unknown' for row in best_sellers],
+        'best_sellers_revenues': [_json_money(row['total_revenue']) for row in best_sellers],
         'avg_prep_time': avg_prep_minutes,
+        'avg_order_value': avg_order_value,
+        'avg_income_per_customer': avg_income_per_customer,
+        'total_customers': total_customers,
+        'repeat_rate': repeat_rate,
+        'avg_items_per_order': avg_items_per_order,
+        'top3_share': top3_share,
+        'peak_weekday': peak_weekday,
+        'peak_hour': peak_hour,
+        'top_meal_names': top_meal_names,
+        'top_meal_quantities': top_meal_quantities,
+        'top_meal_revenues': top_meal_revenues,
+        'category_names': category_names,
+        'category_totals': category_totals,
+        'weekday_labels': weekday_labels,
+        'weekday_data': weekday_data,
+        'hour_labels': hour_labels,
+        'hour_data': hour_data,
+        'total_paid': _json_money(paid_bill_stats['total_paid']) or 0.0,
+        'paid_bills': paid_bill_stats['paid_count'] or 0,
+        'total_outstanding': _json_money(unpaid_bill_stats['total_outstanding']) or 0.0,
+        'unpaid_bills': unpaid_bill_stats['unpaid_count'] or 0,
         'weekly_sales': sales_data,
+        'sales_chart_labels': sales_chart_labels,
+        'sales_chart_values': sales_chart_values,
         'chart_title': chart_title,
         'best_sellers': best_sellers,
         'kitchen_status': status_counts,
         'preparing_percentage': preparing_percentage,
         'ready_percentage': ready_percentage,
-        'recent_orders': recent_orders,
+        'recent_orders': recent_orders_page,
         'tables_active': TableSession.objects.filter(status__in=["ordering", "awaiting_payment"], restaurant=restaurant).count(),
         'active_range': active_range,
         'range_from': range_from_iso,
         'range_to': range_to_iso,
         'query': query,
+        'pagination_qs': pagination_qs,
         'restaurant': restaurant,
     }
 
     return render(request, 'dashboard.html', context)
+
+
+def _resolve_menu_category(restaurant, category_id, new_category_name):
+    """Return a Category for the menu form: either the chosen one or a
+    newly-created category from the ``new_category`` input."""
+    if new_category_name:
+        name = new_category_name.strip()[:100]
+        existing = Category.objects.filter(restaurant=restaurant, name__iexact=name).first()
+        if existing:
+            return existing
+        last = Category.objects.filter(restaurant=restaurant).order_by('-display_order').first()
+        return Category.objects.create(
+            restaurant=restaurant,
+            name=name,
+            display_order=(last.display_order + 1) if last else 0,
+        )
+    if category_id:
+        return Category.objects.filter(id=category_id, restaurant=restaurant).first()
+    return None
+
+
+@ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
+@restaurant_required
+def menu_management(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    categories = Category.objects.filter(restaurant=restaurant).order_by('display_order', 'name')
+    items = MenuItem.objects.filter(restaurant=restaurant).select_related('category').order_by('category__display_order', 'name')
+    query = (request.GET.get('q') or '').strip()[:100]
+    if query:
+        items = items.filter(name__icontains=query)
+    return render(request, 'menu_management.html', {
+        'restaurant': restaurant,
+        'categories': categories,
+        'menu_items': items,
+        'query': query,
+    })
+
+
+@ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
+@restaurant_required
+def menu_item_add(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    categories = Category.objects.filter(restaurant=restaurant).order_by('display_order', 'name')
+
+    if request.method == "POST":
+        name = (request.POST.get('name') or '').strip()[:150]
+        price_raw = (request.POST.get('price') or '').strip()
+        if not name or not price_raw:
+            messages.error(request, "Name and price are required.")
+        else:
+            try:
+                price = Decimal(price_raw)
+            except Exception:
+                messages.error(request, "Price must be a number, e.g. 70.00")
+            else:
+                category = _resolve_menu_category(
+                    restaurant, request.POST.get('category') or '', request.POST.get('new_category') or ''
+                )
+                stock_raw = (request.POST.get('stock_quantity') or '').strip()
+                try:
+                    stock = int(stock_raw) if stock_raw else None
+                except ValueError:
+                    stock = None
+                try:
+                    threshold = int(request.POST.get('low_stock_threshold') or 5)
+                except ValueError:
+                    threshold = 5
+                item = MenuItem(
+                    restaurant=restaurant,
+                    category=category,
+                    name=name,
+                    description=(request.POST.get('description') or '').strip(),
+                    price=price,
+                    is_available=bool(request.POST.get('is_available')),
+                    stock_quantity=stock,
+                    low_stock_threshold=max(0, threshold),
+                )
+                image = request.FILES.get('image')
+                if image:
+                    item.image = image
+                item.save()
+                messages.success(request, f"{item.name} added to the menu.")
+                return redirect('menu_management', restaurant_slug=restaurant.slug)
+
+    return render(request, 'menu_item_form.html', {
+        'restaurant': restaurant,
+        'categories': categories,
+        'item': None,
+    })
+
+
+@ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
+@restaurant_required
+def menu_item_edit(request, restaurant_slug, item_id):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    item = get_object_or_404(MenuItem, id=item_id, restaurant=restaurant)
+    categories = Category.objects.filter(restaurant=restaurant).order_by('display_order', 'name')
+
+    if request.method == "POST":
+        name = (request.POST.get('name') or '').strip()[:150]
+        price_raw = (request.POST.get('price') or '').strip()
+        if not name or not price_raw:
+            messages.error(request, "Name and price are required.")
+        else:
+            try:
+                price = Decimal(price_raw)
+            except Exception:
+                messages.error(request, "Price must be a number, e.g. 70.00")
+            else:
+                category = _resolve_menu_category(
+                    restaurant, request.POST.get('category') or '', request.POST.get('new_category') or ''
+                )
+                stock_raw = (request.POST.get('stock_quantity') or '').strip()
+                try:
+                    stock = int(stock_raw) if stock_raw else None
+                except ValueError:
+                    stock = item.stock_quantity
+                try:
+                    threshold = int(request.POST.get('low_stock_threshold') or item.low_stock_threshold)
+                except ValueError:
+                    threshold = item.low_stock_threshold
+                item.name = name
+                item.description = (request.POST.get('description') or '').strip()
+                item.price = price
+                item.category = category
+                item.is_available = bool(request.POST.get('is_available'))
+                item.stock_quantity = stock
+                item.low_stock_threshold = max(0, threshold)
+                image = request.FILES.get('image')
+                if image:
+                    item.image = image
+                item.save()
+                messages.success(request, f"{item.name} updated.")
+                return redirect('menu_management', restaurant_slug=restaurant.slug)
+
+    return render(request, 'menu_item_form.html', {
+        'restaurant': restaurant,
+        'categories': categories,
+        'item': item,
+    })
+
+
+@ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
+@restaurant_required
+@require_POST
+def menu_item_delete(request, restaurant_slug, item_id):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    item = get_object_or_404(MenuItem, id=item_id, restaurant=restaurant)
+    name = item.name
+    item.delete()
+    messages.success(request, f"{name} removed from the menu.")
+    return redirect('menu_management', restaurant_slug=restaurant.slug)
+
+
+@ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
+@restaurant_required
+@require_POST
+def category_add(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    name = (request.POST.get('name') or '').strip()[:100]
+    if not name:
+        messages.error(request, "Category name is required.")
+    elif Category.objects.filter(restaurant=restaurant, name__iexact=name).exists():
+        messages.error(request, f"Category “{name}” already exists.")
+    else:
+        last = Category.objects.filter(restaurant=restaurant).order_by('-display_order').first()
+        Category.objects.create(
+            restaurant=restaurant, name=name,
+            display_order=(last.display_order + 1) if last else 0,
+        )
+        messages.success(request, f"Category “{name}” created.")
+    return redirect('menu_management', restaurant_slug=restaurant.slug)
+
+
+@ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
+@restaurant_required
+def inventory(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    items = MenuItem.objects.filter(restaurant=restaurant).select_related('category').order_by('category__display_order', 'name')
+    query = (request.GET.get('q') or '').strip()[:100]
+    if query:
+        items = items.filter(name__icontains=query)
+    low_out = [i for i in items if i.stock_status in ('low', 'out')]
+    return render(request, 'inventory.html', {
+        'restaurant': restaurant,
+        'menu_items': items,
+        'low_out_items': low_out,
+        'query': query,
+    })
+
+
+@ratelimit(key='user_or_ip', rate='120/m', method='POST', block=True)
+@restaurant_required
+@require_POST
+def inventory_adjust(request, restaurant_slug, item_id):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    item = get_object_or_404(MenuItem, id=item_id, restaurant=restaurant)
+    try:
+        delta = int(request.POST.get('delta'))
+    except (TypeError, ValueError):
+        delta = 0
+    if delta:
+        if not item.is_stock_tracked:
+            messages.error(request, f"{item.name} doesn't track stock (unlimited).")
+            return redirect('inventory', restaurant_slug=restaurant.slug)
+        item.stock_quantity = max(0, item.stock_quantity + delta)
+        if item.stock_quantity == 0:
+            item.is_available = False  # auto sold-out
+        elif delta > 0:
+            item.is_available = True  # restocking re-lists the dish
+    item.save(update_fields=["stock_quantity", "is_available"])
+    if item.stock_status == 'out':
+        messages.error(request, f"{item.name} is now out of stock and hidden from customers.")
+    else:
+        messages.success(request, f"{item.name} stock set to {item.stock_quantity if item.is_stock_tracked else '∞'}.")
+    return redirect('inventory', restaurant_slug=restaurant.slug)
 
 
 from django.db.models import F, Sum

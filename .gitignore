@@ -29,3 +29,10 @@ Templates_backup/
 resturant/fix_urls.py
 Templates/fix_*.py
 Templates/replace_section.py
+
+# Test artifacts (screenshots, playwright output)
+.playwright-mcp/
+flow-*.png
+kitchen-board*.md
+inventory.md
+menu-*.md

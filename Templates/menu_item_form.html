@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ restaurant.name }} | {% if item %}Edit{{ item.name }}{% else %}Add Dish{% endif %}</title>
+<link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon-192x192.png' %}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+      tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+        "primary": "#973100", "primary-fixed-dim": "#ffb59b", "primary-container": "#c04000",
+        "on-primary-container": "#ffe9e3", "on-surface-variant": "#594139", "on-secondary-container": "#656460",
+        "secondary-container": "#e5e2dc", "surface": "#fbf9f8", "surface-container": "#efeded",
+        "surface-container-low": "#f5f3f3", "surface-container-lowest": "#ffffff",
+        "surface-container-high": "#e9e8e7", "on-surface": "#1b1c1c", "error": "#ba1a1a",
+        "error-container": "#ffdad6", "on-error-container": "#93000a", "outline-variant": "#e1bfb4",
+        "primary-fixed": "#ffdbcf", "on-primary-fixed-variant": "#812800", "secondary": "#5f5e5a"
+      }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem" },
+      fontFamily: { "headline-md": ["Montserrat"], "headline-lg": ["Montserrat"], "body-md": ["Inter"], "label-sm": ["Inter"] } } } }
+    </script>
+<style>.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md">
+<main class="max-w-2xl mx-auto px-4 pt-10 pb-16">
+{% if messages %}{% for msg in messages %}
+<div class="{% if msg.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-surface-container-high text-on-surface{% endif %} px-4 py-2.5 rounded-xl text-sm font-medium mb-3">{{ msg }}</div>
+{% endfor %}{% endif %}
+<div class="flex items-center gap-3 mb-6">
+<a href="{% url 'menu_management' restaurant_slug=restaurant.slug %}" class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full">arrow_back</a>
+<div>
+<h1 class="font-headline-lg text-2xl font-bold text-on-surface">{% if item %}Edit {{ item.name }}{% else %}Add New Dish{% endif %}</h1>
+<p class="text-sm text-on-surface-variant">Changes appear on the customer menu instantly.</p>
+</div>
+</div>
+<form method="post" action="{% if item %}{% url 'menu_item_edit' restaurant_slug=restaurant.slug item_id=item.id %}{% else %}{% url 'menu_item_add' restaurant_slug=restaurant.slug %}{% endif %}" enctype="multipart/form-data" class="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container space-y-5">
+{% csrf_token %}
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Dish name *</label>
+<input name="name" required maxlength="150" value="{{ item.name|default:'' }}" placeholder="e.g. Grilled Chicken" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Price (₵) *</label>
+<input name="price" required type="number" step="0.01" min="0" value="{{ item.price|default:'' }}" placeholder="70.00" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5"/>
+</div>
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Category</label>
+<select name="category" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5">
+<option value="">— Uncategorised —</option>
+{% for cat in categories %}
+<option value="{{ cat.id }}" {% if item.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+{% endfor %}
+</select>
+<input name="new_category" placeholder="…or type a new category name" class="w-full mt-2 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm"/>
+</div>
+</div>
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Description</label>
+<textarea name="description" rows="3" placeholder="Short, tasty description customers will read..." class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5">{{ item.description|default:'' }}</textarea>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Stock quantity</label>
+<input name="stock_quantity" type="number" min="0" value="{{ item.stock_quantity|default:'' }}" placeholder="Leave blank = unlimited" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5"/>
+<p class="text-xs text-on-surface-variant mt-1">Blank = don't track stock for this dish.</p>
+</div>
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Low-stock alert at</label>
+<input name="low_stock_threshold" type="number" min="0" value="{{ item.low_stock_threshold|default:5 }}" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5"/>
+</div>
+</div>
+<div>
+<label class="block text-label-sm font-bold mb-1 text-on-surface-variant">Photo (optional)</label>
+<input name="image" type="file" accept="image/*" onchange="document.getElementById('preview').src = URL.createObjectURL(this.files[0]); document.getElementById('previewBox').classList.remove('hidden')" class="w-full text-sm"/>
+<div id="previewBox" class="mt-3 {% if not item or not item.image %}hidden{% endif %}">
+<img id="preview" src="{{ item.image.url|default:'' }}" alt="preview" class="h-32 rounded-xl object-cover border border-surface-container"/>
+</div>
+</div>
+<label class="flex items-center gap-3 p-3 rounded-xl bg-secondary-container/50 cursor-pointer">
+<input type="checkbox" name="is_available"{% if not item or item.is_available %} checked{% endif %} class="w-5 h-5 text-primary rounded"/>
+<span class="font-bold text-sm">Available for ordering</span>
+</label>
+<div class="flex items-center gap-3 pt-2">
+<button type="submit" class="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-2xl font-bold shadow-lg transition-all">
+{% if item %}save Save Changes{% else %}add_circle Add Dish{% endif %}
+</button>
+<a href="{% url 'menu_management' restaurant_slug=restaurant.slug %}" class="px-6 py-3 rounded-2xl bg-surface-container-high hover:bg-surface-container text-on-surface font-bold transition-all">Cancel</a>
+</div>
+</form>
+</main>
+</body></html>

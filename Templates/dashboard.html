@@ -104,6 +104,8 @@
         },
       }
     </script>
+<!-- Apache ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
       .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -206,6 +208,14 @@
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="{% url 'menu_management' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">restaurant_menu</span>
+<span class="font-label-sm text-label-sm">Menu Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="{% url 'inventory' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-sm text-label-sm">Inventory</span>
+</a>
 <form method="post" action="{% url 'kitchenlogout' restaurant_slug=restaurant.slug %}">
 {% csrf_token %}
 <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98">
@@ -243,7 +253,7 @@
 </form>
 </div>
 <!-- KPI Cards Section -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-10">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-gutter mb-10">
 <!-- Revenue Card -->
 <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
 <div class="flex items-start justify-between mb-4">
@@ -280,6 +290,73 @@
 <p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Avg. Prep Time</p>
 <h2 class="font-display-lg text-headline-lg text-on-surface">{{ avg_prep_time }} <span class="text-headline-md font-normal">min</span></h2>
 </div>
+<!-- Avg Order Value Card -->
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_20px_40px_-12px_rgba(151,49,0,0.05)] border border-surface-container hover:border-primary-fixed transition-all group">
+<div class="flex items-start justify-between mb-4">
+<div class="p-3 rounded-xl bg-primary-fixed-dim text-primary">
+<span class="material-symbols-outlined" data-icon="attach_money">attach_money</span>
+</div>
+</div>
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Avg Order Value</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">₵{{ avg_order_value|floatformat:2 }}</h2>
+<p class="mt-2 text-xs text-on-surface-variant">{{ total_orders }} orders &middot; {{ tables_active }} tables active</p>
+</div>
+</div>
+<!-- Bills & Payments Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-10">
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container flex items-center gap-6">
+<div class="p-3 rounded-xl bg-green-100 text-green-700">
+<span class="material-symbols-outlined" data-icon="price_check">price_check</span>
+</div>
+<div class="flex-1">
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Collected (Paid Bills)</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">₵{{ total_paid|floatformat:2 }}</h2>
+<p class="text-xs text-on-surface-variant">{{ paid_bills }} bills settled in range</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container flex items-center gap-6">
+<div class="p-3 rounded-xl bg-error-container text-error">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+</div>
+<div class="flex-1">
+<p class="text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">Outstanding (Unpaid Bills)</p>
+<h2 class="font-display-lg text-headline-lg text-on-surface">₵{{ total_outstanding|floatformat:2 }}</h2>
+<p class="text-xs text-on-surface-variant">{{ unpaid_bills }} bills awaiting payment</p>
+</div>
+</div>
+</div>
+<!-- Insights Strip -->
+<div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-gutter mb-10">
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Customers</p>
+<h3 class="font-bold text-2xl text-on-surface">{{ total_customers }}</h3>
+<p class="text-xs text-on-surface-variant">table visits in range</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Income / Customer</p>
+<h3 class="font-bold text-2xl text-primary">₵{{ avg_income_per_customer|floatformat:2 }}</h3>
+<p class="text-xs text-on-surface-variant">avg revenue per visit</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Repeat Rate</p>
+<h3 class="font-bold text-2xl text-on-surface">{{ repeat_rate }}%</h3>
+<p class="text-xs text-on-surface-variant">visits with 2+ orders</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Items / Order</p>
+<h3 class="font-bold text-2xl text-on-surface">{{ avg_items_per_order }}</h3>
+<p class="text-xs text-on-surface-variant">avg line items</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Top-3 Share</p>
+<h3 class="font-bold text-2xl text-on-surface">{{ top3_share }}%</h3>
+<p class="text-xs text-on-surface-variant">of all revenue</p>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container text-center">
+<p class="text-on-surface-variant text-xs uppercase tracking-wider mb-1">Peak Demand</p>
+<h3 class="font-bold text-2xl text-on-surface">{{ peak_weekday }} <span class="text-base text-on-surface-variant font-medium">{{ peak_hour }}</span></h3>
+<p class="text-xs text-on-surface-variant">busiest day &amp; hour</p>
+</div>
 </div>
 <!-- Sales Trends & Top Dishes Bento Grid -->
 <div class="bento-grid mb-10">
@@ -288,22 +365,18 @@
 <div class="flex items-center justify-between mb-8">
 <h3 class="font-headline-md text-on-surface">{{ chart_title }}</h3>
 </div>
-<div class="flex items-end justify-between h-64 gap-4 px-2">
-{% for day in weekly_sales %}
-<div class="flex flex-col items-center flex-1 gap-4 h-full justify-end group">
-<div class="chart-bar w-full bg-secondary-fixed-dim rounded-t-lg group-hover:bg-primary transition-all cursor-pointer" style="height: {{ day.height }}%" title="₵{{ day.amount|floatformat:2 }}"></div>
-<span class="text-xs text-on-surface-variant font-bold">{{ day.day }}</span>
+<div id="salesChart" class="w-full h-80"></div>
+{{ sales_chart_labels|json_script:"sales-chart-labels" }}
+{{ sales_chart_values|json_script:"sales-chart-values" }}
 </div>
-{% empty %}
-<p class="text-on-surface-variant text-center py-4 w-full">No sales data for the past week.</p>
-{% endfor %}
-</div>
-</div>
-<!-- Top Dishes List -->
+<!-- Best Dishes: donut + list -->
 <div class="col-span-12 lg:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
 <div class="flex items-center justify-between mb-6">
 <h3 class="font-headline-md text-on-surface">Best Sellers</h3>
 </div>
+<div id="bestSellersChart" class="w-full h-56 mb-6"></div>
+{{ best_sellers_names|json_script:"best-sellers-names" }}
+{{ best_sellers_revenues|json_script:"best-sellers-revenues" }}
 <div class="space-y-6">
 {% for item in best_sellers %}
 <div class="flex items-center gap-4">
@@ -400,6 +473,83 @@ Order #{{ order.id }} placed
 </div>
 </div>
 </section>
+</section>
+<!-- Order Patterns: deeper analytics (weekday, hour, category mix) -->
+<div class="bento-grid mb-10">
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+<h3 class="font-headline-md text-on-surface mb-6">Orders by Weekday</h3>
+<div id="weekdayChart" class="w-full h-64"></div>
+{{ weekday_labels|json_script:"weekday-labels" }}
+{{ weekday_data|json_script:"weekday-data" }}
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+<h3 class="font-headline-md text-on-surface mb-6">Orders by Hour</h3>
+<div id="hourChart" class="w-full h-64"></div>
+{{ hour_labels|json_script:"hour-labels" }}
+{{ hour_data|json_script:"hour-data" }}
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+<h3 class="font-headline-md text-on-surface mb-6">Revenue by Category</h3>
+<div id="categoryChart" class="w-full h-64"></div>
+{{ category_names|json_script:"category-names" }}
+{{ category_totals|json_script:"category-totals" }}
+</div>
+</div>
+<section class="bg-surface-container-lowest p-8 rounded-2xl border border-surface-container mb-10">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-on-surface">Most Bought Meals</h3>
+</div>
+<div id="topMealsChart" class="w-full h-72"></div>
+{{ top_meal_names|json_script:"top-meal-names" }}
+{{ top_meal_quantities|json_script:"top-meal-quantities" }}
+{{ top_meal_revenues|json_script:"top-meal-revenues" }}
+</section>
+<!-- Recent Orders Table -->
+<section class="bg-surface-container-lowest p-8 rounded-2xl border border-surface-container mt-10">
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+<h3 class="font-headline-md text-on-surface">Recent Orders</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Page {{ recent_orders.number }} of {{ recent_orders.paginator.num_pages }}</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant border-b border-surface-container">
+<th class="py-3 pr-4">Order</th>
+<th class="py-3 pr-4">Table</th>
+<th class="py-3 pr-4">Items</th>
+<th class="py-3 pr-4">Status</th>
+<th class="py-3">Placed</th>
+</tr>
+</thead>
+<tbody>
+{% for order in recent_orders %}
+<tr class="border-b border-surface-container hover:bg-surface-container-low transition-colors">
+<td class="py-3 pr-4 font-bold text-on-surface">#{{ order.id }}</td>
+<td class="py-3 pr-4 text-on-surface-variant">{{ order.table_session.table.number }}</td>
+<td class="py-3 pr-4 text-on-surface-variant truncate max-w-[280px]">{% for item in order.items.all %}{{ item.quantity }}× {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td>
+<td class="py-3 pr-4">
+<span class="px-3 py-1 rounded-full text-xs font-bold {% if order.status == 'served' %}bg-green-100 text-green-700{% elif order.status == 'ready' %}bg-primary-fixed text-primary{% elif order.status == 'preparing' %}bg-yellow-100 text-yellow-700{% else %}bg-surface-container text-secondary{% endif %}">{{ order.status|capfirst }}</span>
+</td>
+<td class="py-3 text-on-surface-variant whitespace-nowrap">{{ order.placed_at|date:"d M, H:i" }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="py-6 text-center text-on-surface-variant">No orders match this view.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% if recent_orders.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-6">
+{% if recent_orders.has_previous %}
+<a href="?{{ pagination_qs }}&page={{ recent_orders.previous_page_number }}" class="px-4 py-2 rounded-lg bg-surface-container-high text-secondary hover:bg-surface-container transition-all font-label-sm">Previous</a>
+{% endif %}
+<span class="font-label-sm text-label-sm text-on-surface-variant px-2">Page {{ recent_orders.number }} of {{ recent_orders.paginator.num_pages }}</span>
+{% if recent_orders.has_next %}
+<a href="?{{ pagination_qs }}&page={{ recent_orders.next_page_number }}" class="px-4 py-2 rounded-lg bg-surface-container-high text-secondary hover:bg-surface-container transition-all font-label-sm">Next</a>
+{% endif %}
+</div>
+{% endif %}
+</section>
 </main>
 <script>
         document.querySelectorAll('a').forEach(link => {
@@ -421,6 +571,204 @@ Order #{{ order.id }} placed
         customToggle.addEventListener('click', () => {
             customPanel.classList.toggle('hidden');
             customPanel.classList.toggle('flex');
+        });
+
+        // Apache ECharts initialization
+        const palette = ['#973100', '#c04000', '#e85d04', '#f48c06', '#ffb59b', '#8a5c30'];
+        const axisLabelStyle = { color: '#594139', fontSize: 11 };
+
+        // --- Sales trend chart ---
+        const salesLabels = JSON.parse(document.getElementById('sales-chart-labels').textContent);
+        const salesValues = JSON.parse(document.getElementById('sales-chart-values').textContent);
+        const peakIndex = salesValues.indexOf(Math.max(...salesValues, 0));
+        const salesChart = echarts.init(document.getElementById('salesChart'));
+        const barColors = salesValues.map((v, i) => i === peakIndex
+            ? { color: '#c04000' }  // peak day pops in the deepest brand red
+            : { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                    { offset: 0, color: i % 2 ? '#e85d04' : '#973100' },
+                    { offset: 1, color: i % 2 ? '#f48c06' : '#c04000' }
+                ] } });
+        salesChart.setOption({
+            color: palette,
+            tooltip: { trigger: 'axis', valueFormatter: value => '₵' + Number(value).toFixed(2) },
+            grid: { left: 16, right: 16, top: 24, bottom: 24, containLabel: true },
+            xAxis: {
+                type: 'category', data: salesLabels,
+                boundaryGap: salesLabels.length <= 24,
+                axisLine: { lineStyle: { color: '#e1bfb4' } },
+                axisTick: { show: false },
+                axisLabel: axisLabelStyle
+            },
+            yAxis: {
+                type: 'value',
+                splitLine: { lineStyle: { color: '#efeded' } },
+                axisLabel: Object.assign({ formatter: '₵{value}' }, axisLabelStyle)
+            },
+            series: [{
+                name: 'Revenue',
+                type: salesLabels.length <= 12 ? 'bar' : 'line',
+                data: salesValues,
+                barWidth: '60%',
+                itemStyle: { borderRadius: [6, 6, 0, 0], color: (params) => barColors[params.dataIndex] },
+                emphasis: { itemStyle: { color: '#ffb59b' }, focus: 'series' },
+                smooth: true,
+                areaStyle: salesLabels.length <= 12 ? undefined : {
+                    color: {
+                        type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(232,93,4,0.35)' },
+                            { offset: 0.5, color: 'rgba(192,64,0,0.18)' },
+                            { offset: 1, color: 'rgba(192,64,0,0)' }
+                        ]
+                    }
+                },
+                lineStyle: { width: 3, color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+                    colorStops: [
+                        { offset: 0, color: '#973100' },
+                        { offset: 1, color: '#e85d04' }
+                    ] } },
+                symbolSize: 7
+            }]
+        });
+
+        // --- Best sellers donut ---
+        const bestNames = JSON.parse(document.getElementById('best-sellers-names').textContent);
+        const bestRevenues = JSON.parse(document.getElementById('best-sellers-revenues').textContent);
+        const bestSellersChart = echarts.init(document.getElementById('bestSellersChart'));
+        if (bestNames.length > 0) {
+            const donutColors = ['#973100', '#c04000', '#e85d04', '#f48c06', '#ffb59b', '#8a5c30', '#5f5e5a'];
+            bestSellersChart.setOption({
+                tooltip: { trigger: 'item', valueFormatter: value => '₵' + Number(value).toFixed(2) },
+                color: donutColors,
+                legend: {
+                    bottom: 0,
+                    textStyle: { color: '#594139', fontSize: 11 },
+                    itemWidth: 10, itemHeight: 10
+                },
+                series: [{
+                    name: 'Revenue Share',
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: { borderRadius: 6, borderColor: '#ffffff', borderWidth: 2,
+                        shadowBlur: 6, shadowColor: 'rgba(151,49,0,0.15)' },
+                    label: { show: false },
+                    emphasis: {
+                        label: { show: true, formatter: '{b}\n₵{c}', fontWeight: 'bold', color: '#1b1c1c' },
+                        scaleSize: 6
+                    },
+                    data: bestNames.map((name, idx) => ({ name: name, value: bestRevenues[idx] }))
+                }]
+            });
+        }
+
+        // Resize charts on window changes
+        // ---- Weekday line ----
+        const wdLabels = JSON.parse(document.getElementById('weekday-labels').textContent);
+        const wdData = JSON.parse(document.getElementById('weekday-data').textContent);
+        const weekdayChart = echarts.init(document.getElementById('weekdayChart'));
+        const wdMax = Math.max(...wdData, 1);
+        weekdayChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
+            xAxis: { type: 'category', data: wdLabels, axisLine: { lineStyle: { color: '#e1bfb4' } }, axisTick: { show: false }, axisLabel: axisLabelStyle },
+            yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#efeded' } }, axisLabel: axisLabelStyle },
+            series: [{
+                type: 'line', data: wdData, smooth: true, symbolSize: 8,
+                lineStyle: { width: 3, color: '#c04000' },
+                itemStyle: { color: '#973100' },
+                areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                    colorStops: [
+                        { offset: 0, color: 'rgba(232,93,4,0.30)' },
+                        { offset: 1, color: 'rgba(192,64,0,0)' }
+                    ] } }
+            }]
+        });
+
+        // ---- Hour-of-day bar ----
+        const hrLabels = JSON.parse(document.getElementById('hour-labels').textContent);
+        const hrData = JSON.parse(document.getElementById('hour-data').textContent);
+        const hourChart = echarts.init(document.getElementById('hourChart'));
+        const hrPeak = Math.max(...hrData, 0);
+        hourChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
+            xAxis: { type: 'category', data: hrLabels, axisLine: { lineStyle: { color: '#e1bfb4' } }, axisTick: { show: false }, axisLabel: Object.assign(Object.assign({}, axisLabelStyle), { interval: 2 }) },
+            yAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#efeded' } }, axisLabel: axisLabelStyle },
+            series: [{
+                type: 'bar', data: hrData, barWidth: '70%',
+                itemStyle: {
+                    borderRadius: [4, 4, 0, 0],
+                    color: (p) => p.value === hrPeak && hrPeak > 0
+                        ? '#c04000'
+                        : { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: '#f48c06' },
+                                { offset: 1, color: '#ffb59b' }
+                            ] }
+                }
+            }]
+        });
+
+        // ---- Category donut ----
+        const catNames = JSON.parse(document.getElementById('category-names').textContent);
+        const catTotals = JSON.parse(document.getElementById('category-totals').textContent);
+        const categoryChart = echarts.init(document.getElementById('categoryChart'));
+        if (catNames.length > 0) {
+            const catColors = ['#973100', '#e85d04', '#c04000', '#f48c06', '#ffb59b', '#8a5c30', '#5f5e5a', '#dbdad9'];
+            categoryChart.setOption({
+                tooltip: { trigger: 'item', valueFormatter: v => '₵' + Number(v).toFixed(2) },
+                color: catColors,
+                legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { color: '#594139', fontSize: 11 }, itemWidth: 10, itemHeight: 10 },
+                series: [{
+                    type: 'pie', radius: ['40%', '65%'], center: ['35%', '50%'],
+                    itemStyle: { borderRadius: 6, borderColor: '#ffffff', borderWidth: 2 },
+                    label: { show: false },
+                    data: catNames.map((n, i) => ({ name: n, value: catTotals[i] }))
+                }]
+            });
+        }
+
+        // ---- Most bought meals (ranked horizontal bars) ----
+        const tmNames = JSON.parse(document.getElementById('top-meal-names').textContent);
+        const tmQty = JSON.parse(document.getElementById('top-meal-quantities').textContent);
+        const tmRev = JSON.parse(document.getElementById('top-meal-revenues').textContent);
+        const topMealsChart = echarts.init(document.getElementById('topMealsChart'));
+        if (tmNames.length > 0) {
+            const orderedNames = tmNames.slice().reverse();
+            const orderedQty = tmQty.slice().reverse();
+            const orderedRev = tmRev.slice().reverse();
+            const qtyColors = ['#f48c06', '#e85d04', '#d94a00', '#b53d00', '#973100'];
+            topMealsChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: (params) => {
+                        const idx = orderedNames.indexOf(params[0].name);
+                        return params[0].name + '<br/>' + params.map(p => p.marker + ' ' + p.seriesName + ': ' + p.value).join('<br/>') +
+                            '<br/>Revenue: ₵' + Number(orderedRev[idx]).toFixed(2);
+                    }
+                },
+                grid: { left: 8, right: 60, top: 16, bottom: 8, containLabel: true },
+                xAxis: { type: 'value', minInterval: 1, splitLine: { lineStyle: { color: '#efeded' } }, axisLabel: axisLabelStyle },
+                yAxis: { type: 'category', data: orderedNames, axisLine: { lineStyle: { color: '#e1bfb4' } }, axisTick: { show: false }, axisLabel: Object.assign(Object.assign({}, axisLabelStyle), { width: 110, overflow: 'truncate', fontWeight: 600 }) },
+                series: [{
+                    name: 'Units sold',
+                    type: 'bar', data: orderedQty, barWidth: '55%',
+                    itemStyle: { borderRadius: [0, 6, 6, 0], color: (p) => qtyColors[p.dataIndex % qtyColors.length] },
+                    label: { show: true, position: 'right', formatter: '{c} units', color: '#594139', fontWeight: 'bold' }
+                }]
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            salesChart.resize();
+            bestSellersChart.resize();
+            weekdayChart.resize();
+            hourChart.resize();
+            categoryChart.resize();
+            topMealsChart.resize();
         });
     </script>
 </body></html>

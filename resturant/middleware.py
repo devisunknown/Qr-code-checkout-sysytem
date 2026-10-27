@@ -8,6 +8,12 @@ class SubdomainMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Health probes must not touch the database: they arrive every few
+        # seconds on deployed hosts and can exhaust the connection pooler.
+        if request.path == "/health":
+            request.restaurant = None
+            return self.get_response(request)
+
         host = request.get_host().split(":")[0]
 
         if host in ("localhost", "127.0.0.1", ""):

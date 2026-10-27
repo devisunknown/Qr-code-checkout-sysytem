@@ -1,9 +1,13 @@
 from django.urls import path
+from django.http import HttpResponse
 from django.views.generic import RedirectView
 from . import views
 
 urlpatterns = [
     path("favicon.ico", RedirectView.as_view(url="/static/favicon.ico", permanent=True)),
+    # Deploy-platform health probe. Keep this DB-free: health checks arriving
+    # every few seconds were exhausting the Supabase pooler's 15 connections.
+    path("health", lambda request: HttpResponse("ok", content_type="text/plain")),
 
     # Legacy non-slug staff routes. These MUST come before the slug-scoped
     # routes below: "/kitchen/dashboard/" would otherwise be captured by
@@ -38,5 +42,12 @@ urlpatterns = [
     path("<slug:restaurant_slug>/kitchen/order/<int:order_id>/status/", views.advance_order_status, name="advance_order_status"),
     path("<slug:restaurant_slug>/kitchen/table/<int:table_id>/mark-ready/", views.mark_table_orders_ready, name="mark_table_orders_ready"),
     path("<slug:restaurant_slug>/dashboard/", views.management_dashboard, name="dashboard"),
+    path("<slug:restaurant_slug>/dashboard/menu/", views.menu_management, name="menu_management"),
+    path("<slug:restaurant_slug>/dashboard/menu/add/", views.menu_item_add, name="menu_item_add"),
+    path("<slug:restaurant_slug>/dashboard/menu/<int:item_id>/edit/", views.menu_item_edit, name="menu_item_edit"),
+    path("<slug:restaurant_slug>/dashboard/menu/<int:item_id>/delete/", views.menu_item_delete, name="menu_item_delete"),
+    path("<slug:restaurant_slug>/dashboard/menu/categories/add/", views.category_add, name="category_add"),
+    path("<slug:restaurant_slug>/dashboard/inventory/", views.inventory, name="inventory"),
+    path("<slug:restaurant_slug>/dashboard/inventory/<int:item_id>/adjust/", views.inventory_adjust, name="inventory_adjust"),
     path("<slug:restaurant_slug>/table/<int:table_id>/close/", views.close_table_session, name="close_table_session"),
 ]
