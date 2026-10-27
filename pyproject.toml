@@ -1,0 +1,6 @@
+# Vercel deployment configuration (Python backend entrypoint)
+[tool.vercel]
+entrypoint = "orderingres.wsgi:application"
+
+[tool.vercel.scripts]
+build = "python manage.py collectstatic --noinput"
