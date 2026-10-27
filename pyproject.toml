@@ -1,4 +1,9 @@
 # Vercel deployment configuration (Python backend entrypoint)
+[project]
+name = "orderingres"
+version = "1.0.0"
+requires-python = ">=3.12"
+
 [tool.vercel]
 entrypoint = "orderingres.wsgi:application"
 
