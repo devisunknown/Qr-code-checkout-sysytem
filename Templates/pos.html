@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{ restaurant.name }} | Counter POS</title>
+<link rel="icon" type="image/png" sizes="192x192" href="{% static 'images/favicon-192x192.png' %}">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+  "tertiary": "#535353", "primary-fixed-dim": "#ffb59b", "primary": "#973100",
+  "on-surface-variant": "#594139", "secondary-container": "#e5e2dc", "primary-container": "#c04000",
+  "surface-container": "#efeded", "on-primary-container": "#ffe9e3", "error-container": "#ffdad6",
+  "error": "#ba1a1a", "on-error": "#ffffff", "surface": "#fbf9f8", "outline": "#8d7167",
+  "secondary": "#5f5e5a", "surface-container-lowest": "#ffffff", "outline-variant": "#e1bfb4",
+  "primary-fixed": "#ffdbcf", "on-primary-fixed-variant": "#812800", "green-ok": "#15803d",
+  "surface-container-low": "#f5f3f3", "on-surface": "#1b1c1c", "surface-container-high": "#e9e8e7",
+  "on-primary": "#ffffff", "on-secondary-container": "#656460"
+}, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem" },
+fontFamily: { "headline-md": ["Montserrat"], "headline-lg": ["Montserrat"], "body-md": ["Inter"], "label-sm": ["Inter"] } } } }
+</script>
+<style>.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+.pos-item { user-select: none; }
+.pos-item:active { transform: scale(0.97); }</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md">
+<header class="fixed top-0 w-full z-50 bg-surface shadow-sm flex justify-between items-center px-6 h-[64px]">
+<a class="flex items-center gap-3" href="{% url 'pos_terminal' restaurant_slug=restaurant.slug %}">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center overflow-hidden">
+{% if restaurant.logo %}<img src="{{ restaurant.logo.url }}" alt="{{ restaurant.name }}" class="w-full h-full object-cover"/>
+{% else %}<span class="material-symbols-outlined text-on-primary-container">restaurant</span>{% endif %}
+</div>
+<h1 class="font-headline-md text-xl font-bold text-primary">{{ restaurant.name }}</h1>
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-3 py-1 rounded-full text-xs font-bold">POS</span>
+</a>
+<div class="flex items-center gap-3">
+<a href="{% url 'dashboard' restaurant_slug=restaurant.slug %}" class="text-sm font-bold text-on-surface-variant hover:text-primary">← Dashboard</a>
+<a href="{% url 'menu_management' restaurant_slug=restaurant.slug %}" class="text-sm font-bold text-on-surface-variant hover:text-primary">Menu</a>
+</div>
+</header>
+<main class="pt-24 px-4 md:px-10 pb-24">
+{% if messages %}{% for msg in messages %}
+<div class="{% if msg.tags == 'success' %}bg-green-100 text-green-800{% elif msg.tags == 'error' %}bg-error-container text-on-error-container{% else %}bg-primary-fixed text-on-primary-fixed-variant{% endif %} px-4 py-2.5 rounded-xl text-sm font-medium mb-3 max-w-5xl mx-auto">{{ msg }}</div>
+{% endfor %}{% endif %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+<!-- Left: menu -->
+<section class="lg:col-span-2">
+<div class="flex items-center gap-2 flex-wrap mb-4" id="catTabs">
+<button data-cat="all" class="pos-cat px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold transition-all">All</button>
+{% for cat in categories %}
+<button data-cat="{{ cat.name }}" class="pos-cat px-4 py-2 rounded-xl bg-surface-container-high text-secondary text-sm font-bold hover:bg-surface-container transition-all">{{ cat.name }}</button>
+{% endfor %}
+</div>
+<input id="posSearch" placeholder="Search dishes…" class="w-full mb-4 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-sm"/>
+<div id="menuGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+</section>
+<!-- Right: ticket -->
+<section class="lg:col-span-1">
+<div class="bg-surface-container-lowest rounded-2xl border border-surface-container p-5 sticky top-24">
+<h2 class="font-headline-md text-lg font-bold mb-3 flex items-center gap-2"><span class="material-symbols-outlined">receipt_long</span> Current Ticket</h2>
+<div class="mb-3">
+<label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1">Table</label>
+<select id="posTable" class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-sm">
+{% for t in tables %}
+<option value="{{ t.id }}">{{ t.number|default:"Outside" }}</option>
+{% endfor %}
+</select>
+</div>
+<div id="ticketLines" class="space-y-2 min-h-[80px] max-h-72 overflow-y-auto mb-3"></div>
+<div class="border-t border-surface-container pt-3 space-y-1 text-sm">
+<div class="flex justify-between text-on-surface-variant"><span>Items</span><span id="ticketCount">0</span></div>
+<div class="flex justify-between items-center"><span class="font-bold">Total</span><span id="ticketTotal" class="text-primary text-xl font-bold">₵0.00</span></div>
+</div>
+<div class="grid grid-cols-1 gap-2 mt-4">
+<button id="sendBtn" class="w-full bg-primary hover:bg-primary-container text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+<span class="material-symbols-outlined">send_to_mobile</span> Send Order
+</button>
+<button id="payBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+<span class="material-symbols-outlined">payments</span> Paid Now
+</button>
+<button id="clearBtn" type="button" class="text-sm text-on-surface-variant hover:text-error font-bold py-1.5">
+clear Clear ticket
+</button>
+</div>
+<p class="text-xs text-on-surface-variant mt-3 text-center">Stock is deducted automatically · paid tickets create settled bills</p>
+</div>
+</section>
+</div>
+</main>
+{{ menu_payload|json_script:"pos-menu" }}
+<form id="orderForm" method="post" action="{% url 'pos_submit_order' restaurant_slug=restaurant.slug %}" class="hidden">
+{% csrf_token %}
+<input type="hidden" name="table_id" value=""/>
+<input type="hidden" name="lines" value="[]"/>
+<input type="hidden" name="paid_now" value=""/>
+</form>
+<script>
+const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+const MENU = JSON.parse(document.getElementById('pos-menu').textContent);
+const grid = document.getElementById('menuGrid');
+const searchInput = document.getElementById('posSearch');
+let activeCat = 'all';
+let ticket = new Map(); // id -> qty
+
+function money(v) { return '₵' + Number(v).toFixed(2); }
+
+function filteredMenu() {
+  const q = searchInput.value.trim().toLowerCase();
+  return MENU.filter(m =>
+    (activeCat === 'all' || m.category === activeCat) &&
+    (!q || m.name.toLowerCase().includes(q)));
+}
+
+function renderMenu() {
+  grid.innerHTML = '';
+  const items = filteredMenu();
+  if (!items.length) {
+    grid.innerHTML = '<p class="text-on-surface-variant text-sm col-span-full text-center py-8">No dishes match.</p>';
+    return;
+  }
+  for (const m of items) {
+    const stocked = !m.tracked || m.stock > 0;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pos-item bg-surface-container-lowest border border-surface-container hover:border-primary rounded-xl p-3 text-left transition-all';
+    const stockBadge = m.tracked
+      ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${m.stock <= 3 ? 'bg-yellow-400 text-yellow-900' : 'bg-green-100 text-green-700'}">${m.stock} left</span>`
+      : '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-surface-container text-secondary">∞</span>';
+    btn.innerHTML = `
+      <div class="flex items-center justify-between mb-1">${stockBadge}${stocked ? '' : '<span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-error text-white">Sold out</span>'}</div>
+      <div class="flex items-center gap-2">
+        ${m.image
+          ? `<img src="${m.image}" alt="${m.name}" loading="lazy" referrerpolicy="no-referrer" class="w-12 h-12 rounded-lg object-cover border border-surface-container shrink-0"/>`
+          : `<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-surface-variant">restaurant_menu</span></div>`}
+        <div class="min-w-0">
+          <div class="font-bold text-sm truncate">${m.name}</div>
+          <div class="text-primary font-bold text-sm">${money(m.price)}</div>
+        </div>
+      </div>`;
+    const img = btn.querySelector('img');
+    if (img) {
+      const swapFallback = () => {
+        img.outerHTML = '<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-surface-variant">restaurant_menu</span></div>';
+      };
+      if (img.complete && img.naturalWidth === 0) { swapFallback(); }
+      else { img.addEventListener('error', swapFallback); }
+      // Some failures hang without firing 'error' — give up after 4s.
+      setTimeout(() => { if (document.body.contains(img) && img.naturalWidth === 0) swapFallback(); }, 4000);
+    }
+    if (stocked) {
+      btn.addEventListener('click', () => {
+        ticket.set(m.id, (ticket.get(m.id) || 0) + 1);
+        renderTicket();
+      });
+    } else {
+      btn.classList.add('opacity-40', 'cursor-not-allowed');
+    }
+    grid.appendChild(btn);
+  }
+}
+
+// Category tabs
+document.querySelectorAll('.pos-cat').forEach(tab => {
+  tab.addEventListener('click', () => {
+    activeCat = tab.dataset.cat;
+    document.querySelectorAll('.pos-cat').forEach(t => {
+      const on = t.dataset.cat === activeCat;
+      t.classList.toggle('bg-primary', on);
+      t.classList.toggle('text-white', on);
+      t.classList.toggle('bg-surface-container-high', !on);
+      t.classList.toggle('text-secondary', !on);
+    });
+    renderMenu();
+  });
+});
+searchInput.addEventListener('input', renderMenu);
+
+function renderTicket() {
+  const linesEl = document.getElementById('ticketLines');
+  linesEl.innerHTML = '';
+  let total = 0, count = 0;
+  for (const [id, qty] of ticket) {
+    const m = MENU.find(x => x.id === id);
+    if (!m) continue;
+    const line = m.price * qty;
+    total += line; count += qty;
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 bg-surface-container-low rounded-xl px-2.5 py-2';
+    row.innerHTML = `
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm truncate">${m.name}</div>
+        <div class="text-xs text-on-surface-variant">${money(m.price)} × ${qty} = <b>${money(line)}</b></div>
+      </div>
+      <button type="button" data-dec="${id}" class="w-7 h-7 rounded-full bg-surface-container-high font-bold">−</button>
+      <span class="w-5 text-center font-bold">${qty}</span>
+      <button type="button" data-inc="${id}" class="w-7 h-7 rounded-full bg-primary text-white font-bold">+</button>`;
+    linesEl.appendChild(row);
+  }
+  document.getElementById('ticketCount').textContent = count;
+  document.getElementById('ticketTotal').textContent = money(total);
+  document.getElementById('sendBtn').disabled = count === 0;
+  document.getElementById('payBtn').disabled = count === 0;
+
+  linesEl.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => {
+    const id = Number(b.dataset.dec);
+    const q = (ticket.get(id) || 0) - 1;
+    q <= 0 ? ticket.delete(id) : ticket.set(id, q);
+    renderTicket();
+  }));
+  linesEl.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => {
+    const id = Number(b.dataset.inc);
+    const m = MENU.find(x => x.id === id);
+    const q = (ticket.get(id) || 0) + 1;
+    if (m.tracked && q > m.stock) return; // hard stock cap
+    ticket.set(id, q);
+    renderTicket();
+  }));
+}
+
+function submitOrder(paidNow) {
+  if (!ticket.size) return;
+  const lines = [...ticket.entries()].map(([id, qty]) => ({ id: id, qty: qty }));
+  const form = document.getElementById('orderForm');
+  form.table_id.value = document.getElementById('posTable').value;
+  form.lines.value = JSON.stringify(lines);
+  form.paid_now.value = paidNow ? '1' : '';
+  form.submit();
+}
+
+document.getElementById('sendBtn').addEventListener('click', () => submitOrder(false));
+document.getElementById('payBtn').addEventListener('click', () => submitOrder(true));
+document.getElementById('clearBtn').addEventListener('click', () => { ticket.clear(); renderTicket(); });
+
+renderMenu();
+renderTicket();
+</script>
+</body></html>

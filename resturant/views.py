@@ -970,6 +970,129 @@ def inventory_adjust(request, restaurant_slug, item_id):
     return redirect('inventory', restaurant_slug=restaurant.slug)
 
 
+def _pos_get_session(table, restaurant):
+    """Return the table's active ordering session, creating one lazily like
+    the customer QR flow does."""
+    session = TableSession.objects.filter(
+        table=table, status__in=["ordering", "awaiting_payment"]
+    ).first()
+    if session is None:
+        from django.db import IntegrityError
+        try:
+            session = TableSession.objects.create(
+                table=table, restaurant=restaurant, status="ordering"
+            )
+        except IntegrityError:
+            session = TableSession.objects.filter(
+                table=table, status__in=["ordering", "awaiting_payment"]
+            ).first()
+    return session
+
+
+@ratelimit(key='user_or_ip', rate='60/m', method='GET', block=True)
+@restaurant_required
+def pos_terminal(request, restaurant_slug):
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    if request.user.role == "kitchen":
+        messages.error(request, "Kitchen staff don't have access to the POS terminal.")
+        return redirect("kitchendashboard", restaurant_slug=restaurant.slug)
+    tables = Table.objects.filter(restaurant=restaurant).order_by('number')
+    categories = Category.objects.filter(restaurant=restaurant).order_by('display_order', 'name')
+    items = MenuItem.objects.filter(restaurant=restaurant, is_available=True).select_related('category')
+    menu_payload = [
+        {
+            'id': item.id,
+            'name': item.name,
+            'price': float(item.price),
+            'category': item.category.name if item.category_id else '—',
+            'image': item.image.url if item.image else '',
+            'tracked': item.is_stock_tracked,
+            'stock': item.stock_quantity,
+        }
+        for item in items
+    ]
+    return render(request, 'pos.html', {
+        'restaurant': restaurant,
+        'tables': tables,
+        'categories': categories,
+        'menu_payload': menu_payload,
+    })
+
+
+@ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)
+@restaurant_required
+@require_POST
+def pos_submit_order(request, restaurant_slug):
+    import json as _json
+    restaurant = get_dashboard_restaurant(request, restaurant_slug)
+    table = get_object_or_404(Table, id=request.POST.get('table_id') or 0, restaurant=restaurant)
+    session = _pos_get_session(table, restaurant)
+
+    try:
+        lines = _json.loads(request.POST.get('lines') or '[]')
+        lines = [
+            {'id': int(l['id']), 'qty': max(1, int(l['qty'])), 'notes': str(l.get('notes') or '')[:255]}
+            for l in lines if l.get('id') and int(l.get('qty', 0)) > 0
+        ]
+    except (KeyError, TypeError, ValueError):
+        messages.error(request, "Malformed order payload.")
+        return redirect('pos_terminal', restaurant_slug=restaurant.slug)
+
+    if not lines:
+        messages.error(request, "Add at least one item before sending.")
+        return redirect('pos_terminal', restaurant_slug=restaurant.slug)
+
+    menu_items = {m.id: m for m in MenuItem.objects.filter(
+        restaurant=restaurant, id__in=[l['id'] for l in lines])}
+    unavailable = []
+    missing = False
+    for line in lines:
+        item = menu_items.get(line['id'])
+        if item is None:
+            missing = True
+        elif not item.is_available or (item.is_stock_tracked and item.stock_quantity < line['qty']):
+            unavailable.append(item.name)
+    if missing:
+        messages.error(request, "One or more dishes no longer exist. Refresh and try again.")
+        return redirect('pos_terminal', restaurant_slug=restaurant.slug)
+    if unavailable:
+        messages.error(request, "Not in stock: " + ", ".join(unavailable))
+        return redirect('pos_terminal', restaurant_slug=restaurant.slug)
+
+    paid_now = bool(request.POST.get('paid_now'))
+    with transaction.atomic():
+        order = Order.objects.create(table_session=session, status="pending")
+        total = Decimal("0.00")
+        for line in lines:
+            item = menu_items[line['id']]
+            OrderItem.objects.create(
+                order=order,
+                menu_item=item,
+                quantity=line['qty'],
+                price_at_order=item.price,
+                notes=line['notes'],
+            )
+            item.decrement_stock(line['qty'])
+            total += item.price * line['qty']
+        if paid_now:
+            bill, created = Bill.objects.get_or_create(
+                table_session=session,
+                defaults={"amount": total, "is_paid": True, "paid_at": timezone.now()},
+            )
+            if not created:
+                # Additional POS payments on the same visit accumulate.
+                bill.amount = (bill.amount or Decimal("0.00")) + total
+                bill.is_paid = True
+                bill.paid_at = timezone.now()
+                bill.save(update_fields=["amount", "is_paid", "paid_at"])
+            order.paid = True
+            order.save(update_fields=["paid"])
+            messages.success(request, f"Order #{order.id} placed and marked PAID (₵{total}).")
+        else:
+            messages.success(request, f"Order #{order.id} sent to the kitchen (₵{total} — pay on request).")
+    return redirect('pos_terminal', restaurant_slug=restaurant.slug)
+
+
 from django.db.models import F, Sum
 
 @ratelimit(key='user_or_ip', rate='30/m', method='POST', block=True)

@@ -139,6 +139,10 @@
 <span class="material-symbols-outlined">receipt_long</span>
 <span class="font-label-sm text-label-sm">Live Tickets</span>
 </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'pos_terminal' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">point_of_sale</span>
+<span class="font-label-sm text-label-sm">Counter POS</span>
+</a>
 <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all active:scale-98" href="{% url 'dashboard' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>

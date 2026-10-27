@@ -208,6 +208,10 @@
 <span class="material-symbols-outlined">dashboard</span>
 <span class="font-label-sm text-label-sm">Management Dashboard</span>
 </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="{% url 'pos_terminal' restaurant_slug=restaurant.slug %}">
+<span class="material-symbols-outlined">point_of_sale</span>
+<span class="font-label-sm text-label-sm">Counter POS</span>
+</a>
 <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" href="{% url 'menu_management' restaurant_slug=restaurant.slug %}">
 <span class="material-symbols-outlined">restaurant_menu</span>
 <span class="font-label-sm text-label-sm">Menu Management</span>

@@ -49,5 +49,7 @@ urlpatterns = [
     path("<slug:restaurant_slug>/dashboard/menu/categories/add/", views.category_add, name="category_add"),
     path("<slug:restaurant_slug>/dashboard/inventory/", views.inventory, name="inventory"),
     path("<slug:restaurant_slug>/dashboard/inventory/<int:item_id>/adjust/", views.inventory_adjust, name="inventory_adjust"),
+    path("<slug:restaurant_slug>/dashboard/pos/", views.pos_terminal, name="pos_terminal"),
+    path("<slug:restaurant_slug>/dashboard/pos/order/", views.pos_submit_order, name="pos_submit_order"),
     path("<slug:restaurant_slug>/table/<int:table_id>/close/", views.close_table_session, name="close_table_session"),
 ]

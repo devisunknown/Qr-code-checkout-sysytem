@@ -30,6 +30,8 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 RATELIMIT_ENABLE = os.environ.get('RATELIMIT_ENABLE', 'true').lower() == 'true'
 
 ALLOWED_HOSTS = ['speedyorder.onrender.com', 'localhost', '127.0.0.1', '*.speedyorder.onrender.com']
+# Extra hosts (e.g. Vercel deployments) come via the environment, comma-separated.
+ALLOWED_HOSTS += [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 AUTH_USER_MODEL = 'resturant.User'
 
