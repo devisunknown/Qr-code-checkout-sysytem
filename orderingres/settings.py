@@ -86,13 +86,21 @@ TEMPLATES = [
 WSGI_APPLICATION = 'orderingres.wsgi.application'
 
 if os.environ.get('DATABASE_URL'):
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=60,
-            ssl_require=True,
-        )
-    }
+    _db = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=60,
+        ssl_require=True,
+    )
+    # Supabase pooler is PgBouncer. Port 5432 = session mode, where each
+    # serverless lambda permanently holds a slot (15 total -> EMAXCONNSESSION).
+    # Port 6543 = transaction mode, which multiplexes many clients over the
+    # pool, so persistent connections must be off and server-side cursors
+    # disabled for compatibility.
+    if 'pooler' in (_db.get('HOST') or ''):
+        _db['PORT'] = int(os.environ.get('SUPABASE_POOL_PORT', '6543'))
+        _db['CONN_MAX_AGE'] = 0
+        _db['DISABLE_SERVER_SIDE_CURSORS'] = True
+    DATABASES = {'default': _db}
 else:
     DATABASES = {
         'default': {
